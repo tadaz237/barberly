@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 import {
   AlertCircle,
   ArrowLeft,
@@ -34,6 +35,7 @@ export function ReservationModal({
   servicePrice,
   serviceDurationMin,
 }: Props) {
+  const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<Step>("date");
   const [monthCursor, setMonthCursor] = useState(() => firstDayOfMonth(new Date()));
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -49,6 +51,10 @@ export function ReservationModal({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -130,17 +136,17 @@ export function ReservationModal({
     onClose();
   }
 
-  if (!open) return null;
+  if (!open || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-3 sm:p-6"
+      className="fixed inset-0 isolate z-[100] flex items-start justify-center overflow-y-auto bg-black/90 p-3 backdrop-blur-sm sm:items-center sm:p-6"
       onClick={reset}
       role="dialog"
       aria-modal="true"
     >
       <div
-        className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-zinc-950 shadow-2xl sm:rounded-[2rem]"
+        className="my-auto flex max-h-[calc(100dvh-1.5rem)] min-h-0 w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-zinc-950 shadow-2xl sm:max-h-[calc(100dvh-3rem)] sm:rounded-[2rem]"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex items-start justify-between gap-3 border-b border-white/10 px-5 py-4 sm:px-7 sm:py-5">
@@ -167,7 +173,7 @@ export function ReservationModal({
 
         <Stepper step={step} />
 
-        <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-7">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-7">
           {step === "date" ? (
             <DateStep
               monthCursor={monthCursor}
@@ -318,7 +324,8 @@ export function ReservationModal({
           ) : null}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -333,7 +340,7 @@ function Stepper({ step }: { step: Step }) {
       ? 3
       : steps.findIndex((s) => s.key === step);
   return (
-    <ol className="flex items-center gap-2 border-b border-white/10 px-5 py-3 text-[11px] sm:px-7">
+    <ol className="flex items-center justify-between gap-1 border-b border-white/10 px-5 py-3 text-[11px] sm:justify-start sm:gap-2 sm:px-7">
       {steps.map((s, i) => {
         const active = i === stepIndex;
         const done = i < stepIndex;
@@ -353,7 +360,7 @@ function Stepper({ step }: { step: Step }) {
             <span
               className={`font-semibold uppercase tracking-[0.18em] ${
                 active || done ? "text-white/85" : "text-white/40"
-              }`}
+              } hidden sm:inline`}
             >
               {s.label}
             </span>
