@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
+import { uploadImageToCloudinary } from "@/src/lib/cloudinary";
 import {
   addService,
   countServicesPublishedToday,
@@ -137,7 +138,14 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    image = body.image;
+    try {
+      image = await uploadImageToCloudinary(body.image, "services");
+    } catch {
+      return NextResponse.json(
+        { message: "Impossible d'envoyer la photo du service." },
+        { status: 502 },
+      );
+    }
   }
 
   const plan = await getUserPlan(session.user.id);

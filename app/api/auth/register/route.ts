@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { uploadImageToCloudinary } from "@/src/lib/cloudinary";
 import { getGender } from "@/src/lib/gender";
 import { registerUser } from "@/src/lib/users-store";
 
@@ -64,7 +65,14 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    image = body.image;
+    try {
+      image = await uploadImageToCloudinary(body.image, "avatars");
+    } catch {
+      return NextResponse.json(
+        { message: "Impossible d'envoyer la photo de profil." },
+        { status: 502 },
+      );
+    }
   }
 
   const gender = await getGender();

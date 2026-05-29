@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
+import { uploadImageToCloudinary } from "@/src/lib/cloudinary";
 import {
   addCatalogue,
   countCataloguesByOwner,
@@ -135,14 +136,21 @@ export async function POST(request: Request) {
       }
       price = n;
     }
-    photos.push({
-      image: raw.image,
-      caption:
-        typeof raw.caption === "string" && raw.caption.trim()
-          ? raw.caption
-          : undefined,
-      price,
-    });
+    try {
+      photos.push({
+        image: await uploadImageToCloudinary(raw.image, "catalogues"),
+        caption:
+          typeof raw.caption === "string" && raw.caption.trim()
+            ? raw.caption
+            : undefined,
+        price,
+      });
+    } catch {
+      return NextResponse.json(
+        { message: "Impossible d'envoyer une des photos du catalogue." },
+        { status: 502 },
+      );
+    }
   }
 
   const description =
