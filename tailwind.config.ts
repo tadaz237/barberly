@@ -1,6 +1,6 @@
-/** @type {import('tailwindcss').Config} */
+import type { Config } from "tailwindcss"
 
-const config = {
+const config: Config = {
     content: [
         "./index.html",
         "./src/**/*.{js,ts,jsx,tsx}",
@@ -10,7 +10,11 @@ const config = {
     ],
 
     theme: {
-        extend: {},
+        extend: {
+            fontFamily: {
+                sans: ["var(--font-geist-mono)", "ui-sans-serif", "system-ui"],
+            },
+        },
     },
     plugins: [],
 }

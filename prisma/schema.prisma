@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AuthProvider {
+  credentials
+  google
+}
+
+enum KycReviewStatus {
+  submitted
+  verified
+  rejected
+}
+
+enum Plan {
+  free
+  essential
+  pro
+  premium
+}
+
+enum ReservationStatus {
+  pending
+  confirmed
+  cancelled
+  completed
+}
+
+enum Gender {
+  male
+  female
+}
+
+model User {
+  id            String       @id @default(cuid())
+  name          String
+  email         String       @unique
+  passwordHash  String?
+  image         String?
+  phone         String?
+  bio           String?
+  gender        Gender?
+  provider      AuthProvider @default(credentials)
+  plan          Plan         @default(free)
+  planExpiresAt DateTime?
+  createdAt     DateTime     @default(now())
+
+  kyc        Kyc?
+  services   Service[]
+  catalogues Catalogue[]
+
+  @@map("users")
+}
+
+model Kyc {
+  id                String          @id @default(cuid())
+  userId            String          @unique
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gender            Gender?
+  legalName         String
+  dateOfBirth       String
+  phone             String
+  city              String
+  postalCode        String
+  idType            String?
+  idFront           String?
+  idBack            String?
+  selfie            String?
+  specialties       String[]
+  experienceYears   Int
+  bio               String
+  serviceAreas      String
+  status            KycReviewStatus @default(submitted)
+  submittedAt       DateTime        @default(now())
+  reviewedAt        DateTime?
+  reviewedBy        String?
+  rejectionReason   String?
+  rejectionDeadline DateTime?
+
+  @@map("kyc_submissions")
+}
+
+model Service {
+  id           String   @id @default(cuid())
+  ownerId      String?
+  owner        User?    @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  name         String
+  category     String
+  price        Float
+  duration     Int
+  city         String
+  neighborhood String
+  description  String
+  image        String?
+  featured     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  reservations Reservation[]
+
+  @@index([ownerId])
+  @@map("services")
+}
+
+model Reservation {
+  id            String            @id @default(cuid())
+  serviceId     String
+  service       Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  coiffeurId    String?
+  clientName    String
+  clientAddress String
+  clientPhone   String
+  scheduledAt   DateTime
+  durationMin   Int
+  status        ReservationStatus @default(pending)
+  notes         String?
+  createdAt     DateTime          @default(now())
+
+  @@index([coiffeurId])
+  @@index([scheduledAt])
+  @@map("reservations")
+}
+
+model Catalogue {
+  id          String           @id @default(cuid())
+  ownerId     String
+  owner       User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  createdAt   DateTime         @default(now())
+  photos      CataloguePhoto[]
+
+  @@index([ownerId])
+  @@map("catalogues")
+}
+
+model CataloguePhoto {
+  id          String    @id @default(cuid())
+  catalogueId String
+  catalogue   Catalogue @relation(fields: [catalogueId], references: [id], onDelete: Cascade)
+  image       String
+  caption     String?
+  price       Float?
+  position    Int       @default(0)
+
+  @@index([catalogueId])
+  @@map("catalogue_photos")
+}

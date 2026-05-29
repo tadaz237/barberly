@@ -1,0 +1,52 @@
+name: Deploy MVP Next.js
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Installation de Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Installation des dépendances
+        run: npm install
+
+      - name: Vérification du build
+        run: npm run build
+
+      - name: Connexion à GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build et push de l'image Docker
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository }}:latest
+
+  deploy-placeholder:
+    runs-on: ubuntu-latest
+    needs: build-and-publish
+    steps:
+      - name: Placeholder de déploiement
+        run: echo "Brancher ici le déploiement vers votre cluster Kubernetes ou votre cloud provider."
