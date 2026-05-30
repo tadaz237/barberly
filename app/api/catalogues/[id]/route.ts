@@ -59,6 +59,17 @@ async function resolveImage(value: unknown): Promise<string> {
   throw new Error("invalid_image");
 }
 
+function getRemovedPhotoImages(
+  previousPhotos: { image: string }[],
+  nextPhotos: { image: string }[],
+) {
+  const nextImages = new Set(nextPhotos.map((photo) => photo.image));
+
+  return previousPhotos
+    .map((photo) => photo.image)
+    .filter((image) => !nextImages.has(image));
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -69,6 +80,14 @@ export async function PATCH(
   }
 
   const { id } = await params;
+  const existingCatalogue = await getCatalogueByOwner(session.user.id, id);
+
+  if (!existingCatalogue) {
+    return NextResponse.json(
+      { message: "Catalogue introuvable ou non autorisé." },
+      { status: 404 },
+    );
+  }
 
   let body: IncomingPayload;
   try {
@@ -139,6 +158,10 @@ export async function PATCH(
     typeof body.description === "string" && body.description.trim()
       ? body.description
       : undefined;
+  const removedPhotoImages = getRemovedPhotoImages(
+    existingCatalogue.photos,
+    photos,
+  );
 
   const catalogue = await updateCatalogue(session.user.id, id, {
     name: body.name,
@@ -150,6 +173,18 @@ export async function PATCH(
     return NextResponse.json(
       { message: "Catalogue introuvable ou non autorisé." },
       { status: 404 },
+    );
+  }
+
+  try {
+    await deleteImagesFromCloudinary(removedPhotoImages);
+  } catch {
+    return NextResponse.json(
+      {
+        message:
+          "Catalogue mis a jour, mais une ancienne photo Cloudinary n'a pas pu etre supprimee.",
+      },
+      { status: 502 },
     );
   }
 
