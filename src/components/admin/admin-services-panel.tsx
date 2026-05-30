@@ -13,6 +13,12 @@ import {
 import { Camera, Crown, Edit3, ImageIcon, Loader2, Trash2, X } from "lucide-react"
 
 import { AdminServiceForm } from "@/src/components/admin/admin-service-form"
+import {
+  MARKETPLACE_TONES,
+  getMarketplaceRoleLabel,
+  getMarketplaceToneKey,
+  type MarketplaceGender,
+} from "@/src/components/marketplace/marketplace-theme"
 import { Button } from "@/src/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
 import {
@@ -24,6 +30,11 @@ import {
 } from "@/src/components/ui/dialog"
 import { ImageCropModal } from "@/src/components/ui/image-crop-modal"
 import { Input } from "@/src/components/ui/input"
+import {
+  MAX_SERVICE_DURATION_MINUTES,
+  MIN_SERVICE_DESCRIPTION_LENGTH,
+} from "@/src/lib/service-validation"
+import { cn } from "@/src/lib/utils"
 
 type ServiceItem = {
   id: string
@@ -38,6 +49,7 @@ type ServiceItem = {
   image?: string
   featured?: boolean
   createdAt: string
+  ownerGender?: MarketplaceGender
 }
 
 type ServicesResponse = {
@@ -223,12 +235,28 @@ export function AdminServicesPanel({ plan = "free" }: { plan?: Plan }) {
             </div>
           ) : (
             <div className="space-y-3">
-              {services.map((service) => (
-                <article
-                  key={service.id}
-                  className="group/service flex flex-col gap-3 rounded-xl border border-white/10 bg-white/5 p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/10 sm:flex-row sm:gap-4"
-                >
-                  <div className="h-36 w-full shrink-0 overflow-hidden rounded-lg bg-muted sm:size-20">
+              {services.map((service) => {
+                const toneKey = getMarketplaceToneKey(
+                  service.ownerGender,
+                  service.category
+                )
+                const tone = MARKETPLACE_TONES[toneKey]
+                const roleLabel = getMarketplaceRoleLabel(toneKey)
+
+                return (
+                  <article
+                    key={service.id}
+                    className={cn(
+                      "group/service flex flex-col gap-3 rounded-xl border border-white/10 bg-white/5 p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 sm:flex-row sm:gap-4",
+                      tone.cardHover
+                    )}
+                  >
+                  <div
+                    className={cn(
+                      "h-36 w-full shrink-0 overflow-hidden rounded-lg border sm:size-20",
+                      tone.avatar
+                    )}
+                  >
                     {service.image ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -241,7 +269,7 @@ export function AdminServicesPanel({ plan = "free" }: { plan?: Plan }) {
                         Sans photo
                       </div>
                     )}
-                  </div>
+                    </div>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -253,10 +281,23 @@ export function AdminServicesPanel({ plan = "free" }: { plan?: Plan }) {
                               Mis en avant
                             </span>
                           ) : null}
+                          <span
+                            className={cn(
+                              "rounded-full px-2.5 py-1 text-xs font-medium",
+                              tone.chip
+                            )}
+                          >
+                            {roleLabel}
+                          </span>
                         </div>
 
                         <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                          <span className="rounded-full bg-white/10 px-2.5 py-1">
+                          <span
+                            className={cn(
+                              "rounded-full px-2.5 py-1",
+                              tone.chip
+                            )}
+                          >
                             {service.category}
                           </span>
                           <span className="rounded-full bg-white/10 px-2.5 py-1">
@@ -301,8 +342,9 @@ export function AdminServicesPanel({ plan = "free" }: { plan?: Plan }) {
                       {service.description}
                     </p>
                   </div>
-                </article>
-              ))}
+                  </article>
+                )
+              })}
             </div>
           )}
         </CardContent>
@@ -400,9 +442,12 @@ function ServiceEditDialog({
       !values.category.trim() ||
       !values.price.trim() ||
       !values.duration.trim() ||
+      !Number.isFinite(Number(values.duration)) ||
+      Number(values.duration) <= 0 ||
+      Number(values.duration) > MAX_SERVICE_DURATION_MINUTES ||
       !values.city.trim() ||
       !values.neighborhood.trim() ||
-      !values.description.trim()
+      values.description.trim().length < MIN_SERVICE_DESCRIPTION_LENGTH
     )
   }, [submitting, values])
 
@@ -563,6 +608,7 @@ function ServiceEditDialog({
                   id="edit-service-duration"
                   type="number"
                   min="1"
+                  max="720"
                   step="1"
                   value={values.duration}
                   onChange={(event) =>
@@ -577,6 +623,7 @@ function ServiceEditDialog({
               <textarea
                 id="edit-service-description"
                 rows={4}
+                minLength={MIN_SERVICE_DESCRIPTION_LENGTH}
                 className="flex min-h-24 w-full rounded-xl border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
                 value={values.description}
                 onChange={(event) =>

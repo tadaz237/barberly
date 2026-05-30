@@ -113,7 +113,7 @@ export default async function PlatformKycDetailPage({
           <InfoCard
             icon={<MapPin className="size-4" />}
             label="Domicile"
-            value={`${submission.postalCode} ${submission.city}`}
+            value={submission.city}
             sublabel={`Zones d'intervention : ${submission.serviceAreas}`}
           />
           <InfoCard
@@ -214,4 +214,3 @@ function InfoCard({
     </div>
   );
 }
-

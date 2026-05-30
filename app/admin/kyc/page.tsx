@@ -100,7 +100,6 @@ export default async function KycPage() {
                     dateOfBirth: submission.dateOfBirth,
                     phone: submission.phone,
                     city: submission.city,
-                    postalCode: submission.postalCode,
                     specialties: submission.specialties,
                     experienceYears: String(submission.experienceYears ?? ""),
                     bio: submission.bio,

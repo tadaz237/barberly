@@ -21,6 +21,14 @@ import {
   UserRound,
   X,
 } from "lucide-react";
+import {
+  MARKETPLACE_TONES,
+  getMarketplaceRoleLabel,
+  getMarketplaceToneKey,
+  type MarketplaceGender,
+  type MarketplaceTone,
+} from "@/src/components/marketplace/marketplace-theme";
+import { cn } from "@/src/lib/utils";
 
 type Step = "date" | "slot" | "form" | "done";
 
@@ -31,6 +39,8 @@ type Props = {
   serviceName: string;
   servicePrice: number;
   serviceDurationMin: number;
+  ownerGender?: MarketplaceGender;
+  serviceCategory?: string;
 };
 
 function subscribeToClientMounted() {
@@ -44,6 +54,8 @@ export function ReservationModal({
   serviceName,
   servicePrice,
   serviceDurationMin,
+  ownerGender,
+  serviceCategory,
 }: Props) {
   const mounted = useSyncExternalStore(
     subscribeToClientMounted,
@@ -65,6 +77,10 @@ export function ReservationModal({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const toneKey = getMarketplaceToneKey(ownerGender, serviceCategory);
+  const tone = MARKETPLACE_TONES[toneKey];
+  const roleLabel = getMarketplaceRoleLabel(toneKey);
+  const inputClassName = cn(inputBaseClass, tone.focus);
 
   useEffect(() => {
     if (!open) return;
@@ -132,7 +148,7 @@ export function ReservationModal({
         }
         setSuccess(
           payload?.message ??
-            "Réservation envoyée. Le coiffeur va confirmer rapidement.",
+            `Réservation envoyée. Votre ${roleLabel} va confirmer rapidement.`,
         );
         setStep("done");
       } catch {
@@ -167,7 +183,12 @@ export function ReservationModal({
       >
         <header className="flex items-start justify-between gap-3 border-b border-white/10 px-5 py-4 sm:px-7 sm:py-5">
           <div className="space-y-1">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-pink-200">
+            <p
+              className={cn(
+                "text-[11px] font-semibold uppercase tracking-[0.22em]",
+                tone.text,
+              )}
+            >
               Réserver une prestation
             </p>
             <h2 className="text-lg font-semibold tracking-tight text-white sm:text-xl">
@@ -187,7 +208,7 @@ export function ReservationModal({
           </button>
         </header>
 
-        <Stepper step={step} />
+        <Stepper step={step} tone={tone} />
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-7">
           {step === "date" ? (
@@ -203,6 +224,7 @@ export function ReservationModal({
                 setError(null);
                 setStep("slot");
               }}
+              tone={tone}
             />
           ) : null}
 
@@ -215,6 +237,7 @@ export function ReservationModal({
               onPick={(slot) => setSelectedSlot(slot)}
               onContinue={() => setStep("form")}
               onBack={() => setStep("date")}
+              tone={tone}
             />
           ) : null}
 
@@ -223,15 +246,23 @@ export function ReservationModal({
               <button
                 type="button"
                 onClick={() => setStep("slot")}
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-white/55 hover:text-amber-200"
+                className={cn(
+                  "inline-flex items-center gap-1.5 text-xs font-medium text-white/55",
+                  tone.linkHover,
+                )}
               >
                 <ArrowLeft className="size-3.5" />
                 Changer l&apos;horaire
               </button>
 
               {selectedDate && selectedSlot ? (
-                <div className="rounded-2xl border border-pink-400/20 bg-pink-400/5 p-4 text-sm">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-pink-200">
+                <div className={cn("rounded-2xl border p-4 text-sm", tone.softPanel)}>
+                  <p
+                    className={cn(
+                      "text-[11px] font-semibold uppercase tracking-[0.22em]",
+                      tone.text,
+                    )}
+                  >
                     Créneau choisi
                   </p>
                   <p className="mt-1 font-medium text-white">
@@ -244,7 +275,7 @@ export function ReservationModal({
               ) : null}
 
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Votre nom complet" Icon={UserRound}>
+                <Field label="Votre nom complet" Icon={UserRound} tone={tone}>
                   <input
                     type="text"
                     value={form.clientName}
@@ -253,10 +284,10 @@ export function ReservationModal({
                     }
                     required
                     placeholder="Awa Diallo"
-                    className={inputClass}
+                    className={inputClassName}
                   />
                 </Field>
-                <Field label="Téléphone" Icon={Phone}>
+                <Field label="Téléphone" Icon={Phone} tone={tone}>
                   <input
                     type="tel"
                     value={form.clientPhone}
@@ -265,12 +296,12 @@ export function ReservationModal({
                     }
                     required
                     placeholder="+225 07 12 34 56 78"
-                    className={inputClass}
+                    className={inputClassName}
                   />
                 </Field>
               </div>
 
-              <Field label="Adresse de la prestation" Icon={MapPin}>
+              <Field label="Adresse de la prestation" Icon={MapPin} tone={tone}>
                 <input
                   type="text"
                   value={form.clientAddress}
@@ -279,11 +310,11 @@ export function ReservationModal({
                   }
                   required
                   placeholder="Rue, numéro, quartier, ville…"
-                  className={inputClass}
+                  className={inputClassName}
                 />
               </Field>
 
-              <Field label="Notes pour le coiffeur (optionnel)">
+              <Field label={`Notes pour le ${roleLabel} (optionnel)`} tone={tone}>
                 <textarea
                   value={form.notes}
                   onChange={(e) =>
@@ -291,7 +322,7 @@ export function ReservationModal({
                   }
                   rows={3}
                   placeholder="Type de cheveux, attentes particulières…"
-                  className={`${inputClass} min-h-20 py-2.5`}
+                  className={cn(inputClassName, "min-h-20 py-2.5")}
                 />
               </Field>
 
@@ -308,7 +339,10 @@ export function ReservationModal({
               <button
                 type="submit"
                 disabled={isPending}
-                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-pink-400 px-5 text-sm font-semibold text-zinc-950 shadow-lg shadow-pink-500/30 transition-colors hover:bg-pink-300 disabled:opacity-60"
+                className={cn(
+                  "inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold shadow-lg transition-colors disabled:opacity-60",
+                  tone.solidButton,
+                )}
               >
                 {isPending ? (
                   <Loader2 className="size-4 animate-spin" />
@@ -336,7 +370,10 @@ export function ReservationModal({
               <button
                 type="button"
                 onClick={reset}
-                className="inline-flex h-11 items-center justify-center rounded-2xl bg-pink-400 px-6 text-sm font-semibold text-zinc-950 hover:bg-pink-300"
+                className={cn(
+                  "inline-flex h-11 items-center justify-center rounded-2xl px-6 text-sm font-semibold",
+                  tone.solidButton,
+                )}
               >
                 Fermer
               </button>
@@ -349,7 +386,7 @@ export function ReservationModal({
   );
 }
 
-function Stepper({ step }: { step: Step }) {
+function Stepper({ step, tone }: { step: Step; tone: MarketplaceTone }) {
   const steps: { key: Step; label: string }[] = [
     { key: "date", label: "Date" },
     { key: "slot", label: "Horaire" },
@@ -369,9 +406,9 @@ function Stepper({ step }: { step: Step }) {
             <span
               className={`inline-flex size-6 items-center justify-center rounded-full text-[10px] font-bold transition-colors ${
                 done
-                  ? "bg-pink-400 text-zinc-950"
+                  ? tone.stepDone
                   : active
-                    ? "bg-pink-400/20 text-pink-200 ring-2 ring-pink-400/50"
+                    ? tone.stepActive
                     : "bg-white/5 text-white/45"
               }`}
             >
@@ -399,11 +436,13 @@ function DateStep({
   setMonthCursor,
   selectedDate,
   onPick,
+  tone,
 }: {
   monthCursor: Date;
   setMonthCursor: (d: Date) => void;
   selectedDate: Date | null;
   onPick: (d: Date) => void;
+  tone: MarketplaceTone;
 }) {
   const days = useMemo(() => buildMonthGrid(monthCursor), [monthCursor]);
   const today = new Date();
@@ -457,8 +496,8 @@ function DateStep({
                   : isPast
                     ? "text-white/25"
                     : isSelected
-                      ? "bg-pink-400 text-zinc-950 shadow-lg shadow-pink-500/40"
-                      : "bg-white/5 text-white/85 hover:bg-pink-400/15 hover:text-pink-100"
+                      ? tone.daySelected
+                      : tone.dayIdle
               }`}
             >
               {date.getDate()}
@@ -478,6 +517,7 @@ function SlotStep({
   onPick,
   onContinue,
   onBack,
+  tone,
 }: {
   date: Date;
   slots: string[];
@@ -486,20 +526,29 @@ function SlotStep({
   onPick: (slot: string) => void;
   onContinue: () => void;
   onBack: () => void;
+  tone: MarketplaceTone;
 }) {
   return (
     <div className="space-y-4">
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-white/55 hover:text-amber-200"
+        className={cn(
+          "inline-flex items-center gap-1.5 text-xs font-medium text-white/55",
+          tone.linkHover,
+        )}
       >
         <ArrowLeft className="size-3.5" />
         Changer la date
       </button>
 
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-pink-200">
+        <p
+          className={cn(
+            "text-[11px] font-semibold uppercase tracking-[0.22em]",
+            tone.text,
+          )}
+        >
           {formatDateLong(date)}
         </p>
         <p className="mt-1 text-xs text-white/55">
@@ -528,8 +577,8 @@ function SlotStep({
                 onClick={() => onPick(iso)}
                 className={`rounded-xl border px-2 py-2 text-sm font-semibold transition-colors ${
                   active
-                    ? "border-pink-400 bg-pink-400/20 text-pink-100"
-                    : "border-white/10 bg-white/5 text-white/75 hover:border-pink-400/40 hover:text-pink-200"
+                    ? tone.slotActive
+                    : tone.slotIdle
                 }`}
               >
                 {t
@@ -549,7 +598,10 @@ function SlotStep({
           type="button"
           onClick={onContinue}
           disabled={!selectedSlot}
-          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-pink-400 text-sm font-semibold text-zinc-950 shadow-lg shadow-pink-500/30 hover:bg-pink-300 disabled:opacity-50"
+          className={cn(
+            "inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl text-sm font-semibold shadow-lg disabled:opacity-50",
+            tone.solidButton,
+          )}
         >
           Continuer
           <ChevronRight className="size-4" />
@@ -563,15 +615,17 @@ function Field({
   label,
   Icon,
   children,
+  tone,
 }: {
   label: string;
   Icon?: typeof UserRound;
   children: React.ReactNode;
+  tone: MarketplaceTone;
 }) {
   return (
     <label className="grid gap-1.5 text-sm font-medium text-white/80">
       <span className="inline-flex items-center gap-1.5">
-        {Icon ? <Icon className="size-3.5 text-pink-200/70" /> : null}
+        {Icon ? <Icon className={cn("size-3.5", tone.iconSoft)} /> : null}
         {label}
       </span>
       {children}
@@ -579,8 +633,8 @@ function Field({
   );
 }
 
-const inputClass =
-  "h-11 w-full rounded-xl border border-white/15 bg-white/5 px-3.5 text-sm text-white placeholder:text-white/35 shadow-inner shadow-black/20 transition-colors focus:border-pink-400/50 focus:outline-none focus:ring-2 focus:ring-pink-400/20";
+const inputBaseClass =
+  "h-11 w-full rounded-xl border border-white/15 bg-white/5 px-3.5 text-sm text-white placeholder:text-white/35 shadow-inner shadow-black/20 transition-colors focus:outline-none focus:ring-2";
 
 function firstDayOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1);

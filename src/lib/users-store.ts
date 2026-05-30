@@ -174,13 +174,16 @@ export type RegisterInput = {
 
 export type SubmitKycInput = Omit<
   KycSubmission,
+  | "postalCode"
   | "submittedAt"
   | "status"
   | "reviewedAt"
   | "reviewedBy"
   | "rejectionReason"
   | "rejectionDeadline"
->;
+> & {
+  postalCode?: string;
+};
 
 export type KycListEntry = {
   user: { id: string; name: string; email: string; image?: string };
@@ -317,7 +320,7 @@ export async function setUserKyc(
     dateOfBirth: input.dateOfBirth,
     phone: input.phone,
     city: input.city,
-    postalCode: input.postalCode,
+    postalCode: input.postalCode?.trim() ?? "",
     idType: input.idType ?? null,
     idFront: input.idFront ?? null,
     idBack: input.idBack ?? null,

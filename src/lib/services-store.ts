@@ -39,6 +39,18 @@ export type UpdateServiceInput = Omit<CreateServiceInput, "ownerId" | "image"> &
   image?: string | null;
 };
 
+const SERVICE_OWNER_SELECT = {
+  plan: true,
+  gender: true,
+  kyc: { select: { status: true, gender: true } },
+} as const;
+
+type ServiceOwnerMeta = {
+  plan: Plan;
+  gender: Gender | null;
+  kyc: { status: string; gender: Gender | null } | null;
+} | null;
+
 const CITY_COORDINATES: Record<string, { latitude: number; longitude: number }> = {
   abidjan: { latitude: 5.36, longitude: -4.0083 },
   bamako: { latitude: 12.6392, longitude: -8.0029 },
@@ -90,31 +102,29 @@ function toServiceItem(
   };
 }
 
+function toOwnerMeta(owner: ServiceOwnerMeta | undefined) {
+  if (!owner) return undefined;
+
+  return {
+    plan: owner.plan as Plan,
+    kycVerified: owner.kyc?.status === "verified",
+    gender: ((owner.gender ?? owner.kyc?.gender) ?? undefined) as
+      | Gender
+      | undefined,
+  };
+}
+
 export async function getServices(): Promise<ServiceItem[]> {
   const services = await prisma.service.findMany({
     orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
     include: {
-      owner: {
-        select: {
-          plan: true,
-          gender: true,
-          kyc: { select: { status: true, gender: true } },
-        },
-      },
+      owner: { select: SERVICE_OWNER_SELECT },
     },
   });
 
   return services
     .map((s) => {
-      const ownerMeta = s.owner
-        ? {
-            plan: s.owner.plan as Plan,
-            kycVerified: s.owner.kyc?.status === "verified",
-            gender: ((s.owner.gender ?? s.owner.kyc?.gender) ?? undefined) as
-              | Gender
-              | undefined,
-          }
-        : undefined;
+      const ownerMeta = toOwnerMeta(s.owner);
       return {
         service: toServiceItem(s, ownerMeta),
         boost: ownerMeta ? PLAN_LIMITS[ownerMeta.plan].marketplaceBoost : 0,
@@ -127,8 +137,11 @@ export async function getServices(): Promise<ServiceItem[]> {
 export async function getServiceById(
   id: string,
 ): Promise<ServiceItem | undefined> {
-  const service = await prisma.service.findUnique({ where: { id } });
-  return service ? toServiceItem(service) : undefined;
+  const service = await prisma.service.findUnique({
+    where: { id },
+    include: { owner: { select: SERVICE_OWNER_SELECT } },
+  });
+  return service ? toServiceItem(service, toOwnerMeta(service.owner)) : undefined;
 }
 
 export async function getServicesByOwner(
@@ -137,8 +150,9 @@ export async function getServicesByOwner(
   const services = await prisma.service.findMany({
     where: { ownerId },
     orderBy: { createdAt: "desc" },
+    include: { owner: { select: SERVICE_OWNER_SELECT } },
   });
-  return services.map((s) => toServiceItem(s));
+  return services.map((s) => toServiceItem(s, toOwnerMeta(s.owner)));
 }
 
 export async function countServicesByOwner(ownerId: string): Promise<number> {

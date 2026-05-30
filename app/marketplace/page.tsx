@@ -55,9 +55,9 @@ export default async function MarketplacePage() {
             ) : (
               <Link
                 href="/login"
-                className="inline-flex items-center gap-1 text-xs font-medium text-white/70 transition-colors hover:text-pink-200 sm:text-sm"
+                className="inline-flex items-center gap-1 text-xs font-medium text-white/70 transition-colors hover:text-amber-200 sm:text-sm"
               >
-                <span className="text-pink-300 underline-offset-4 hover:underline">
+                <span className="text-amber-300 underline-offset-4 hover:underline">
                   Se connecter
                 </span>
                 <ChevronRight className="size-4" />

@@ -12,6 +12,17 @@ import {
   Sparkles,
   UserRound,
 } from "lucide-react";
+import {
+  KYC_MIN_BIO_LENGTH,
+  getAdultMaxBirthDate,
+  normalizeKycInput,
+  sanitizeCityInput,
+  sanitizePersonNameInput,
+  sanitizePhoneInput,
+  sanitizePositiveIntegerInput,
+  sanitizeServiceAreasInput,
+  validateKycInput,
+} from "@/src/lib/kyc-validation";
 
 type Gender = "male" | "female";
 
@@ -76,7 +87,6 @@ type FormState = {
   dateOfBirth: string;
   phone: string;
   city: string;
-  postalCode: string;
   specialties: Specialty[];
   experienceYears: string;
   bio: string;
@@ -88,7 +98,6 @@ const initial: FormState = {
   dateOfBirth: "",
   phone: "",
   city: "",
-  postalCode: "",
   specialties: [],
   experienceYears: "",
   bio: "",
@@ -123,7 +132,6 @@ export function KycForm({
     dateOfBirth: initialValues?.dateOfBirth ?? "",
     phone: initialValues?.phone ?? "",
     city: initialValues?.city ?? "",
-    postalCode: initialValues?.postalCode ?? "",
     specialties: initialValues?.specialties ?? [],
     experienceYears: initialValues?.experienceYears ?? "",
     bio: initialValues?.bio ?? "",
@@ -161,14 +169,23 @@ export function KycForm({
       return;
     }
 
+    const validationMessage = validateKycInput(values);
+    if (validationMessage) {
+      setStatus({ state: "error", message: validationMessage });
+      return;
+    }
+
+    const normalizedValues = normalizeKycInput(values);
+
     startTransition(async () => {
       try {
         const res = await fetch("/api/kyc", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            ...values,
-            experienceYears: Number(values.experienceYears || 0),
+            ...normalizedValues,
+            specialties: values.specialties,
+            experienceYears: Number(normalizedValues.experienceYears || 0),
             gender,
           }),
         });
@@ -248,36 +265,57 @@ export function KycForm({
         palette={palette}
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Nom et prénom (état civil)" htmlFor="legalName" palette={palette}>
+          <Field
+            label="Nom et prénom (état civil)"
+            htmlFor="legalName"
+            palette={palette}
+            hint="Lettres, espaces, apostrophes et tirets uniquement."
+          >
             <input
               id="legalName"
               type="text"
               value={values.legalName}
-              onChange={(e) => update("legalName", e.target.value)}
+              onChange={(e) =>
+                update("legalName", sanitizePersonNameInput(e.target.value))
+              }
               required
+              minLength={3}
+              maxLength={80}
+              autoComplete="name"
               placeholder="Awa Diallo"
               className={inputClass(palette)}
             />
           </Field>
 
           <Field label="Date de naissance" htmlFor="dateOfBirth" palette={palette}>
-            <input
-              id="dateOfBirth"
-              type="date"
-              value={values.dateOfBirth}
-              onChange={(e) => update("dateOfBirth", e.target.value)}
-              required
-              className={inputClass(palette)}
-            />
+            <div className="w-full max-w-[13.5rem] min-w-0 sm:max-w-none">
+              <input
+                id="dateOfBirth"
+                type="date"
+                value={values.dateOfBirth}
+                onChange={(e) => update("dateOfBirth", e.target.value)}
+                required
+                max={getAdultMaxBirthDate()}
+                className={`${inputClass(palette)} min-w-0 max-w-full`}
+              />
+            </div>
           </Field>
 
-          <Field label="Téléphone visible par vos clientes" htmlFor="phone" palette={palette}>
+          <Field
+            label="Téléphone visible par vos clientes"
+            htmlFor="phone"
+            palette={palette}
+            hint="Format accepté : chiffres, espaces, +, parenthèses et tirets."
+          >
             <input
               id="phone"
               type="tel"
               value={values.phone}
-              onChange={(e) => update("phone", e.target.value)}
+              onChange={(e) => update("phone", sanitizePhoneInput(e.target.value))}
               required
+              inputMode="tel"
+              maxLength={20}
+              autoComplete="tel"
               placeholder="+225 07 12 34 56 78"
               className={inputClass(palette)}
             />
@@ -288,21 +326,12 @@ export function KycForm({
               id="city"
               type="text"
               value={values.city}
-              onChange={(e) => update("city", e.target.value)}
+              onChange={(e) => update("city", sanitizeCityInput(e.target.value))}
               required
+              minLength={2}
+              maxLength={60}
+              autoComplete="address-level2"
               placeholder="Paris"
-              className={inputClass(palette)}
-            />
-          </Field>
-
-          <Field label="Code postal" htmlFor="postalCode" palette={palette}>
-            <input
-              id="postalCode"
-              type="text"
-              value={values.postalCode}
-              onChange={(e) => update("postalCode", e.target.value)}
-              required
-              placeholder="75011"
               className={inputClass(palette)}
             />
           </Field>
@@ -350,8 +379,14 @@ export function KycForm({
               min="0"
               max="80"
               value={values.experienceYears}
-              onChange={(e) => update("experienceYears", e.target.value)}
+              onChange={(e) =>
+                update(
+                  "experienceYears",
+                  sanitizePositiveIntegerInput(e.target.value),
+                )
+              }
               required
+              inputMode="numeric"
               placeholder="5"
               className={inputClass(palette)}
             />
@@ -362,8 +397,12 @@ export function KycForm({
               id="serviceAreas"
               type="text"
               value={values.serviceAreas}
-              onChange={(e) => update("serviceAreas", e.target.value)}
+              onChange={(e) =>
+                update("serviceAreas", sanitizeServiceAreasInput(e.target.value))
+              }
               required
+              minLength={3}
+              maxLength={120}
               placeholder="Paris 11e, 12e, 20e"
               className={inputClass(palette)}
             />
@@ -380,6 +419,8 @@ export function KycForm({
             value={values.bio}
             onChange={(e) => update("bio", e.target.value)}
             required
+            minLength={KYC_MIN_BIO_LENGTH}
+            maxLength={500}
             rows={4}
             placeholder="Votre approche, vos formations, ce qui vous distingue…"
             className={`${inputClass(palette)} min-h-24 py-2.5`}
@@ -466,7 +507,7 @@ const PINK: Palette = {
 };
 
 function inputClass(palette: Palette) {
-  return `h-11 w-full rounded-xl border border-white/15 bg-white/5 px-3.5 text-sm text-white placeholder:text-white/35 shadow-inner shadow-black/20 transition-colors ${palette.focusBorder} focus:outline-none focus:ring-2 ${palette.focusRing}`;
+  return `h-11 w-full min-w-0 rounded-xl border border-white/15 bg-white/5 px-3.5 text-sm text-white placeholder:text-white/35 shadow-inner shadow-black/20 transition-colors ${palette.focusBorder} focus:outline-none focus:ring-2 ${palette.focusRing}`;
 }
 
 function Field({
@@ -474,11 +515,13 @@ function Field({
   htmlFor,
   children,
   palette,
+  hint,
 }: {
   label: string;
   htmlFor: string;
   children: React.ReactNode;
   palette: Palette;
+  hint?: string;
 }) {
   return (
     <label
@@ -487,6 +530,7 @@ function Field({
     >
       <span>{label}</span>
       {children}
+      {hint ? <span className="text-xs font-normal text-white/40">{hint}</span> : null}
       <span aria-hidden className={`hidden ${palette.textSoft}`} />
     </label>
   );

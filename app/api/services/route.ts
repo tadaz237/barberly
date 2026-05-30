@@ -14,6 +14,10 @@ import {
   getUserLimits,
   getUserPlan,
 } from "@/src/lib/users-store";
+import {
+  MAX_SERVICE_DURATION_MINUTES,
+  validateServiceTextFields,
+} from "@/src/lib/service-validation";
 
 type IncomingPayload = {
   name?: unknown;
@@ -141,6 +145,23 @@ export async function POST(request: Request) {
     );
   }
 
+  const textValidation = validateServiceTextFields({
+    name: body.name,
+    category: body.category,
+    city: body.city,
+    neighborhood: body.neighborhood,
+    description: body.description,
+  });
+
+  if (!textValidation.ok) {
+    return NextResponse.json(
+      { message: textValidation.message },
+      { status: 400 },
+    );
+  }
+
+  const textValues = textValidation.values;
+
   const price = Number(body.price);
   const duration = Number(body.duration);
 
@@ -154,6 +175,13 @@ export async function POST(request: Request) {
   if (!Number.isFinite(duration) || duration <= 0) {
     return NextResponse.json(
       { message: "La durée doit être un nombre valide supérieur à 0." },
+      { status: 400 },
+    );
+  }
+
+  if (duration > MAX_SERVICE_DURATION_MINUTES) {
+    return NextResponse.json(
+      { message: "La durée ne peut pas dépasser 12 heures." },
       { status: 400 },
     );
   }
@@ -189,13 +217,13 @@ export async function POST(request: Request) {
 
   const service = await addService({
     ownerId: session.user.id,
-    name: body.name,
-    category: body.category,
+    name: textValues.name,
+    category: textValues.category,
     price,
     duration,
-    city: body.city,
-    neighborhood: body.neighborhood,
-    description: body.description,
+    city: textValues.city,
+    neighborhood: textValues.neighborhood,
+    description: textValues.description,
     image,
     featured,
   });

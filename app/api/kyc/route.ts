@@ -8,8 +8,10 @@ import {
   type Gender,
   type KycSpecialty,
 } from "@/src/lib/users-store";
-
-const PHONE_RE = /^[+]?[\d\s().-]{6,20}$/;
+import {
+  normalizeKycInput,
+  validateKycInput,
+} from "@/src/lib/kyc-validation";
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -30,7 +32,6 @@ type IncomingPayload = {
   dateOfBirth?: unknown;
   phone?: unknown;
   city?: unknown;
-  postalCode?: unknown;
   specialties?: unknown;
   experienceYears?: unknown;
   bio?: unknown;
@@ -59,7 +60,6 @@ export async function POST(request: Request) {
     !isNonEmptyString(body.dateOfBirth) ||
     !isNonEmptyString(body.phone) ||
     !isNonEmptyString(body.city) ||
-    !isNonEmptyString(body.postalCode) ||
     !isNonEmptyString(body.bio) ||
     !isNonEmptyString(body.serviceAreas)
   ) {
@@ -69,24 +69,24 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!PHONE_RE.test(body.phone)) {
+  const rawExperience =
+    typeof body.experienceYears === "string" ||
+    typeof body.experienceYears === "number"
+      ? body.experienceYears
+      : "";
+  const normalizedKyc = normalizeKycInput({
+    legalName: body.legalName,
+    dateOfBirth: body.dateOfBirth,
+    phone: body.phone,
+    city: body.city,
+    experienceYears: rawExperience,
+    bio: body.bio,
+    serviceAreas: body.serviceAreas,
+  });
+  const validationMessage = validateKycInput(normalizedKyc);
+  if (validationMessage) {
     return NextResponse.json(
-      { message: "Numéro de téléphone invalide." },
-      { status: 400 },
-    );
-  }
-
-  const dob = new Date(body.dateOfBirth);
-  if (Number.isNaN(dob.getTime())) {
-    return NextResponse.json(
-      { message: "Date de naissance invalide." },
-      { status: 400 },
-    );
-  }
-  const age = (Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
-  if (age < 18) {
-    return NextResponse.json(
-      { message: "Vous devez être majeur pour publier des services." },
+      { message: validationMessage },
       { status: 400 },
     );
   }
@@ -116,8 +116,8 @@ export async function POST(request: Request) {
     specialties.push(raw as KycSpecialty);
   }
 
-  const experience = Number(body.experienceYears);
-  if (!Number.isFinite(experience) || experience < 0 || experience > 80) {
+  const experience = Number(normalizedKyc.experienceYears);
+  if (!Number.isInteger(experience) || experience < 0 || experience > 80) {
     return NextResponse.json(
       { message: "Années d'expérience invalides." },
       { status: 400 },
@@ -126,15 +126,14 @@ export async function POST(request: Request) {
 
   const publicUser = await setUserKyc(session.user.id, {
     gender,
-    legalName: body.legalName.trim(),
-    dateOfBirth: body.dateOfBirth,
-    phone: body.phone.trim(),
-    city: body.city.trim(),
-    postalCode: body.postalCode.trim(),
+    legalName: normalizedKyc.legalName,
+    dateOfBirth: normalizedKyc.dateOfBirth,
+    phone: normalizedKyc.phone,
+    city: normalizedKyc.city,
     specialties,
     experienceYears: experience,
-    bio: body.bio.trim(),
-    serviceAreas: body.serviceAreas.trim(),
+    bio: normalizedKyc.bio,
+    serviceAreas: normalizedKyc.serviceAreas,
   });
 
   if (!publicUser) {

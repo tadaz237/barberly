@@ -16,9 +16,18 @@ import {
 } from "lucide-react";
 import { ImageLightbox } from "@/src/components/ui/image-lightbox";
 import { ReservationCta } from "@/src/components/marketplace/reservation-cta";
+import {
+  MARKETPLACE_TONES,
+  getMarketplaceRoleLabel,
+  getMarketplaceRoleTitle,
+  getMarketplaceToneKey,
+  type MarketplaceTone,
+  type MarketplaceToneKey,
+} from "@/src/components/marketplace/marketplace-theme";
 import { getCataloguesByOwner } from "@/src/lib/catalogues-store";
 import { getServiceById } from "@/src/lib/services-store";
 import { getUserById } from "@/src/lib/users-store";
+import { cn } from "@/src/lib/utils";
 
 export default async function ServiceDetailPage({
   params,
@@ -38,6 +47,14 @@ export default async function ServiceDetailPage({
       ? getCataloguesByOwner(service.ownerId)
       : Promise.resolve([]),
   ]);
+  const toneKey = getMarketplaceToneKey(
+    service.ownerGender ?? coiffeur?.gender,
+    service.category,
+  );
+  const tone = MARKETPLACE_TONES[toneKey];
+  const roleLabel = getMarketplaceRoleLabel(toneKey);
+  const fallbackProviderName =
+    toneKey === "male" ? "ce coiffeur" : "cette coiffeuse";
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
@@ -65,7 +82,10 @@ export default async function ServiceDetailPage({
 
           <Link
             href="/marketplace"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-white/70 transition-colors hover:text-pink-200 sm:text-sm"
+            className={cn(
+              "inline-flex items-center gap-1.5 text-xs font-medium text-white/70 transition-colors sm:text-sm",
+              tone.linkHover,
+            )}
           >
             <ArrowLeft className="size-4" />
             Retour à la marketplace
@@ -75,7 +95,12 @@ export default async function ServiceDetailPage({
 
       <div className="relative mx-auto w-full max-w-6xl space-y-8 px-4 py-6 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
         <article className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-          <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-linear-to-br from-pink-400/15 via-fuchsia-500/10 to-purple-600/10 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)] sm:rounded-[2rem]">
+          <div
+            className={cn(
+              "relative overflow-hidden rounded-3xl border border-white/10 bg-linear-to-br shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)] sm:rounded-[2rem]",
+              tone.detailMediaBg,
+            )}
+          >
             {service.image ? (
               <ImageLightbox src={service.image} alt={`Photo de ${service.name}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -87,7 +112,7 @@ export default async function ServiceDetailPage({
               </ImageLightbox>
             ) : (
               <div className="flex aspect-video items-center justify-center sm:aspect-4/3">
-                <Sparkles className="size-16 text-pink-200/30" />
+                <Sparkles className={cn("size-16", tone.placeholderIconSoft)} />
               </div>
             )}
             <div className="absolute top-4 left-4 flex flex-wrap gap-2">
@@ -115,17 +140,17 @@ export default async function ServiceDetailPage({
 
             <dl className="grid gap-3 rounded-2xl bg-white/5 p-4 text-sm">
               <DetailRow
-                icon={<MapPin className="size-4 text-pink-300" />}
+                icon={<MapPin className={cn("size-4", tone.icon)} />}
                 label="Zone d'intervention"
                 value={`${service.city} · ${service.neighborhood}`}
               />
               <DetailRow
-                icon={<Clock3 className="size-4 text-pink-300" />}
+                icon={<Clock3 className={cn("size-4", tone.icon)} />}
                 label="Durée"
                 value={`${service.duration} min`}
               />
               <DetailRow
-                icon={<CalendarCheck className="size-4 text-pink-300" />}
+                icon={<CalendarCheck className={cn("size-4", tone.icon)} />}
                 label="Tarif"
                 value={`${service.price.toLocaleString("fr-FR")} FCFA`}
               />
@@ -136,20 +161,27 @@ export default async function ServiceDetailPage({
               serviceName={service.name}
               servicePrice={service.price}
               serviceDurationMin={service.duration}
+              ownerGender={service.ownerGender ?? coiffeur?.gender}
+              serviceCategory={service.category}
             />
 
             <p className="text-center text-[11px] text-white/40">
-              Réservation directe — confirmation par votre coiffeuse / coiffeur.
+              Réservation directe — confirmation par votre {roleLabel}.
             </p>
           </div>
         </article>
 
-        <CoiffeurCard coiffeur={coiffeur} />
+        <CoiffeurCard coiffeur={coiffeur} tone={tone} toneKey={toneKey} />
 
         {catalogues.length > 0 ? (
           <section className="space-y-5">
             <div className="space-y-1">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-pink-200">
+              <p
+                className={cn(
+                  "text-[11px] font-semibold uppercase tracking-[0.22em]",
+                  tone.text,
+                )}
+              >
                 Portfolio
               </p>
               <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
@@ -157,7 +189,7 @@ export default async function ServiceDetailPage({
               </h2>
               <p className="text-sm text-white/55">
                 Les coiffures déjà réalisées par{" "}
-                {coiffeur?.name ?? "ce coiffeur"}.
+                {coiffeur?.name ?? fallbackProviderName}.
               </p>
             </div>
 
@@ -199,7 +231,12 @@ export default async function ServiceDetailPage({
                               {photo.caption ?? ""}
                             </span>
                             {photo.price !== undefined ? (
-                              <span className="shrink-0 rounded-full bg-pink-400/15 px-2 py-0.5 font-semibold text-pink-200">
+                              <span
+                                className={cn(
+                                  "shrink-0 rounded-full px-2 py-0.5 font-semibold",
+                                  tone.chip,
+                                )}
+                              >
                                 {photo.price.toLocaleString("fr-FR")} FCFA
                               </span>
                             ) : null}
@@ -245,18 +282,29 @@ type CoiffeurInfo = {
   image?: string;
   phone?: string;
   bio?: string;
+  gender?: "male" | "female";
   kycStatus?: "none" | "submitted" | "verified" | "rejected" | "blocked";
   plan?: "free" | "essential" | "pro" | "premium";
 } | null | undefined;
 
-function CoiffeurCard({ coiffeur }: { coiffeur: CoiffeurInfo }) {
+function CoiffeurCard({
+  coiffeur,
+  tone,
+  toneKey,
+}: {
+  coiffeur: CoiffeurInfo;
+  tone: MarketplaceTone;
+  toneKey: MarketplaceToneKey;
+}) {
+  const roleTitle = getMarketplaceRoleTitle(toneKey);
+
   if (!coiffeur) {
     return (
       <section className="rounded-3xl border border-dashed border-white/15 bg-white/3 p-6 text-center backdrop-blur sm:rounded-[2rem]">
         <p className="text-sm text-white/60">
           Cette prestation a été publiée par notre équipe de démonstration. Les
-          informations du coiffeur seront disponibles dès qu&apos;un pro l&apos;aura
-          adoptée.
+          informations du {getMarketplaceRoleLabel(toneKey)} seront disponibles
+          dès qu&apos;un pro l&apos;aura adoptée.
         </p>
       </section>
     );
@@ -265,7 +313,12 @@ function CoiffeurCard({ coiffeur }: { coiffeur: CoiffeurInfo }) {
   return (
     <section className="overflow-hidden rounded-3xl border border-white/10 bg-linear-to-br from-zinc-800/60 via-zinc-900/70 to-zinc-950/90 p-6 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur sm:rounded-[2rem] sm:p-8">
       <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
-        <div className="flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-pink-400/30 bg-pink-400/10">
+        <div
+          className={cn(
+            "flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border",
+            tone.avatar,
+          )}
+        >
           {coiffeur.image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -274,14 +327,19 @@ function CoiffeurCard({ coiffeur }: { coiffeur: CoiffeurInfo }) {
               className="size-full object-cover"
             />
           ) : (
-            <UserRound className="size-9 text-pink-200/70" />
+            <UserRound className={cn("size-9", tone.iconSoft)} />
           )}
         </div>
 
         <div className="flex-1 space-y-3">
           <div className="space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-pink-200">
-              Le coiffeur
+            <p
+              className={cn(
+                "text-[11px] font-semibold uppercase tracking-[0.22em]",
+                tone.text,
+              )}
+            >
+              {roleTitle}
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-xl font-semibold tracking-tight text-white sm:text-2xl">
@@ -293,7 +351,7 @@ function CoiffeurCard({ coiffeur }: { coiffeur: CoiffeurInfo }) {
               <p className="text-sm leading-6 text-white/60">{coiffeur.bio}</p>
             ) : (
               <p className="text-sm leading-6 text-white/45">
-                Profil en cours de complétion par le coiffeur.
+                Profil en cours de complétion par le {getMarketplaceRoleLabel(toneKey)}.
               </p>
             )}
           </div>
@@ -302,7 +360,10 @@ function CoiffeurCard({ coiffeur }: { coiffeur: CoiffeurInfo }) {
             {coiffeur.phone ? (
               <a
                 href={`tel:${coiffeur.phone}`}
-                className="inline-flex items-center gap-2 rounded-xl border border-pink-400/30 bg-pink-400/10 px-3.5 py-2 text-xs font-semibold text-pink-200 transition-colors hover:bg-pink-400/20"
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-semibold transition-colors",
+                  tone.softButton,
+                )}
               >
                 <Phone className="size-3.5" />
                 {coiffeur.phone}
@@ -310,7 +371,7 @@ function CoiffeurCard({ coiffeur }: { coiffeur: CoiffeurInfo }) {
             ) : (
               <span
                 className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs text-white/50"
-                title="Le coiffeur doit compléter sa vérification KYC pour afficher son numéro."
+                title={`${roleTitle} doit compléter sa vérification KYC pour afficher son numéro.`}
               >
                 <ShieldCheck className="size-3.5" />
                 Numéro disponible après KYC

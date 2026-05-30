@@ -19,6 +19,11 @@ import {
 } from "lucide-react";
 import type { ServiceItem } from "@/src/lib/services-store";
 import { ImageLightbox } from "@/src/components/ui/image-lightbox";
+import { cn } from "@/src/lib/utils";
+import {
+  MARKETPLACE_TONES,
+  getMarketplaceToneKey,
+} from "@/src/components/marketplace/marketplace-theme";
 
 type ServicesResponse = {
   services: ServiceItem[];
@@ -293,7 +298,7 @@ export function ServicesShowcase() {
           <div className="space-y-3">
             <h1 className="text-balance text-3xl font-semibold tracking-tight text-white sm:text-4xl lg:text-5xl">
               Trouvez le coiffeur qui vient{" "}
-              <span className="bg-linear-to-r from-pink-300 via-fuchsia-300 to-purple-300 bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-pink-300 via-amber-200 to-amber-300 bg-clip-text text-transparent">
                 à votre porte
               </span>
               .
@@ -350,7 +355,7 @@ export function ServicesShowcase() {
             <button
               type="button"
               onClick={resetFilters}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-pink-200 hover:text-pink-100"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-200 hover:text-amber-100"
             >
               <X className="size-3.5" />
               Effacer les filtres
@@ -474,7 +479,7 @@ function SearchBar({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Rechercher un service, une catégorie, une zone…"
-        className="h-12 w-full rounded-2xl border border-white/15 bg-white/5 pr-12 pl-11 text-sm text-white placeholder:text-white/40 shadow-inner shadow-black/20 backdrop-blur transition-colors focus:border-pink-400/40 focus:outline-none focus:ring-2 focus:ring-pink-400/20"
+        className="h-12 w-full rounded-2xl border border-white/15 bg-white/5 pr-12 pl-11 text-sm text-white placeholder:text-white/40 shadow-inner shadow-black/20 backdrop-blur transition-colors focus:border-amber-400/40 focus:outline-none focus:ring-2 focus:ring-pink-400/20"
       />
       {value ? (
         <button
@@ -565,7 +570,7 @@ function Filters({
               id="marketplace-sort"
               value={sort}
               onChange={(e) => onSortChange(e.target.value as NearbySortKey)}
-              className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-white/15 bg-white/5 pr-9 pl-4 text-sm font-medium text-white shadow-inner shadow-black/20 backdrop-blur transition-colors focus:border-pink-400/40 focus:outline-none focus:ring-2 focus:ring-pink-400/20 sm:w-auto"
+              className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-white/15 bg-white/5 pr-9 pl-4 text-sm font-medium text-white shadow-inner shadow-black/20 backdrop-blur transition-colors focus:border-amber-400/40 focus:outline-none focus:ring-2 focus:ring-pink-400/20 sm:w-auto"
             >
               {sortOptions.map((opt) => (
                 <option key={opt.value} value={opt.value} className="bg-zinc-900">
@@ -631,7 +636,7 @@ function CategoryChip({
       aria-pressed={active}
       className={`rounded-full border px-4 py-1.5 text-xs font-medium transition-all ${
         active
-          ? "border-pink-400/40 bg-pink-400/15 text-pink-200 shadow-[0_0_20px_-4px_rgba(244,114,182,0.4)]"
+          ? "border-amber-400/40 bg-amber-400/15 text-amber-100 shadow-[0_0_20px_-4px_rgba(251,191,36,0.35)]"
           : "border-white/15 bg-white/5 text-white/65 hover:border-white/30 hover:text-white"
       }`}
     >
@@ -647,12 +652,19 @@ function ServiceCard({
   service: ServiceItem;
   distance?: number;
 }) {
+  const tone = MARKETPLACE_TONES[
+    getMarketplaceToneKey(service.ownerGender, service.category)
+  ];
+
   return (
     <Link
       href={`/marketplace/${service.id}`}
-      className="group/card relative flex h-full flex-col overflow-hidden rounded-3xl border border-white/10 bg-linear-to-br from-zinc-800/60 via-zinc-900/70 to-zinc-950/90 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-pink-400/30 hover:shadow-[0_24px_60px_-12px_rgba(244,114,182,0.25),inset_0_1px_0_rgba(255,255,255,0.1)]"
+      className={cn(
+        "group/card relative flex h-full flex-col overflow-hidden rounded-3xl border border-white/10 bg-linear-to-br from-zinc-800/60 via-zinc-900/70 to-zinc-950/90 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1",
+        tone.cardHover,
+      )}
     >
-      <div className="relative h-40 overflow-hidden bg-linear-to-br from-pink-400/20 via-fuchsia-500/10 to-purple-600/5">
+      <div className={cn("relative h-40 overflow-hidden bg-linear-to-br", tone.mediaBg)}>
         {service.image ? (
           <ImageLightbox src={service.image} alt={service.name}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -664,7 +676,7 @@ function ServiceCard({
           </ImageLightbox>
         ) : (
           <div className="flex size-full items-center justify-center">
-            <Scissors className="relative size-12 text-pink-200/40 drop-shadow-[0_0_12px_rgba(244,114,182,0.4)]" />
+            <Scissors className={cn("relative size-12", tone.placeholderIcon)} />
           </div>
         )}
         <span
@@ -680,7 +692,12 @@ function ServiceCard({
           ) : null}
           <OwnerPlanPill plan={service.ownerPlan} />
         </div>
-        <span className="absolute top-3 left-3 inline-flex rounded-full bg-zinc-950/70 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/80 backdrop-blur">
+        <span
+          className={cn(
+            "absolute top-3 left-3 inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] backdrop-blur",
+            tone.chip,
+          )}
+        >
           {service.category}
         </span>
       </div>
@@ -697,7 +714,7 @@ function ServiceCard({
         <div className="mt-auto space-y-3 pt-2">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/55">
             <span className="inline-flex items-center gap-1.5">
-              <MapPin className="size-3.5 text-pink-300/80" />
+              <MapPin className={cn("size-3.5", tone.icon)} />
               {service.city} · {service.neighborhood}
             </span>
             {distance !== undefined ? (
@@ -707,7 +724,7 @@ function ServiceCard({
               </span>
             ) : null}
             <span className="inline-flex items-center gap-1.5">
-              <Clock3 className="size-3.5 text-pink-300/80" />
+              <Clock3 className={cn("size-3.5", tone.icon)} />
               {service.duration} min
             </span>
           </div>
@@ -722,7 +739,13 @@ function ServiceCard({
                 <span className="ml-1 text-sm text-white/60">FCFA</span>
               </p>
             </div>
-            <span className="inline-flex items-center gap-1.5 rounded-xl bg-pink-400 px-3.5 py-2 text-xs font-semibold text-zinc-950 shadow-lg shadow-pink-500/20 transition-colors group-hover/card:bg-pink-300">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold shadow-lg transition-colors",
+                tone.solidButton,
+                tone.cardButtonHover,
+              )}
+            >
               Réserver
               <ArrowRight className="size-3.5" />
             </span>
@@ -805,7 +828,7 @@ function EmptyState({
         <button
           type="button"
           onClick={onReset}
-          className="mt-5 inline-flex items-center gap-2 rounded-xl border border-pink-400/30 bg-pink-400/10 px-4 py-2 text-xs font-semibold text-pink-200 hover:bg-pink-400/20"
+          className="mt-5 inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs font-semibold text-amber-200 hover:bg-amber-400/20"
         >
           <X className="size-3.5" />
           Réinitialiser les filtres
