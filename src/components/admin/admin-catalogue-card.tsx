@@ -8,7 +8,16 @@ import {
   type FormEvent,
 } from "react";
 import { useRouter } from "next/navigation";
-import { AlertCircle, CheckCircle2, Edit3, Loader2, Plus, Save, X } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Edit3,
+  Loader2,
+  Plus,
+  Save,
+  Trash2,
+  X,
+} from "lucide-react";
 import { ImageCropModal } from "@/src/components/ui/image-crop-modal";
 import type { Catalogue } from "@/src/lib/catalogues-store";
 
@@ -45,6 +54,7 @@ export function AdminCatalogueCard({ catalogue }: { catalogue: Catalogue }) {
     catalogueToPhotos(catalogue),
   );
   const [stagingImage, setStagingImage] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [status, setStatus] = useState<Status>({ state: "idle" });
   const [isPending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -153,6 +163,46 @@ export function AdminCatalogueCard({ catalogue }: { catalogue: Catalogue }) {
     });
   }
 
+  async function handleDelete() {
+    if (
+      !window.confirm(
+        `Supprimer définitivement le catalogue "${catalogue.name}" ?`,
+      )
+    ) {
+      return;
+    }
+
+    setDeleting(true);
+    setStatus({ state: "idle" });
+
+    try {
+      const res = await fetch(`/api/catalogues/${catalogue.id}`, {
+        method: "DELETE",
+      });
+      const payload = (await res.json().catch(() => null)) as
+        | { message?: string }
+        | null;
+
+      if (!res.ok) {
+        setStatus({
+          state: "error",
+          message: payload?.message ?? "Suppression impossible.",
+        });
+        return;
+      }
+
+      setStatus({
+        state: "success",
+        message: payload?.message ?? "Catalogue supprimé.",
+      });
+      router.refresh();
+    } catch {
+      setStatus({ state: "error", message: "Erreur réseau." });
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   const reachedMax = photos.length >= MAX_PHOTOS;
 
   return (
@@ -176,14 +226,50 @@ export function AdminCatalogueCard({ catalogue }: { catalogue: Catalogue }) {
                   {catalogue.photos.length > 1 ? "s" : ""}
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={startEdit}
-                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 text-sm font-semibold text-amber-200 transition-colors hover:bg-amber-400/20"
-              >
-                <Edit3 className="size-4" />
-                Modifier
-              </button>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={startEdit}
+                  disabled={deleting}
+                  className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 text-sm font-semibold text-amber-200 transition-colors hover:bg-amber-400/20 disabled:opacity-60"
+                >
+                  <Edit3 className="size-4" />
+                  Modifier
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-2xl border border-red-400/30 bg-red-500/10 px-4 text-sm font-semibold text-red-200 transition-colors hover:bg-red-500/20 disabled:opacity-60"
+                >
+                  {deleting ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="size-4" />
+                  )}
+                  Supprimer
+                </button>
+              </div>
+
+              {status.state === "error" ? (
+                <div
+                  role="alert"
+                  className="flex items-start gap-3 rounded-2xl border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+                >
+                  <AlertCircle className="mt-0.5 size-4 shrink-0" />
+                  <p>{status.message}</p>
+                </div>
+              ) : null}
+
+              {status.state === "success" ? (
+                <div
+                  role="status"
+                  className="flex items-start gap-3 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200"
+                >
+                  <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
+                  <p>{status.message}</p>
+                </div>
+              ) : null}
             </div>
           </>
         ) : (

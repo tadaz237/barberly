@@ -158,3 +158,50 @@ export async function PATCH(
     message: "Catalogue mis à jour.",
   });
 }
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ message: "Non authentifié." }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const catalogue = await getCatalogueByOwner(session.user.id, id);
+
+  if (!catalogue) {
+    return NextResponse.json(
+      { message: "Catalogue introuvable ou non autorisé." },
+      { status: 404 },
+    );
+  }
+
+  try {
+    await deleteImagesFromCloudinary(
+      catalogue.photos.map((photo) => photo.image),
+    );
+  } catch {
+    return NextResponse.json(
+      {
+        message:
+          "Suppression interrompue : une photo Cloudinary n'a pas pu etre supprimee. Reessayez avant de retirer le catalogue.",
+      },
+      { status: 502 },
+    );
+  }
+
+  const deleted = await deleteCatalogue(session.user.id, id);
+
+  if (!deleted) {
+    return NextResponse.json(
+      { message: "Catalogue introuvable ou non autorisé." },
+      { status: 404 },
+    );
+  }
+
+  return NextResponse.json({
+    message: "Catalogue supprime avec ses photos Cloudinary.",
+  });
+}
