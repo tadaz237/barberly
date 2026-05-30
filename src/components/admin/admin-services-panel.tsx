@@ -138,8 +138,8 @@ export function AdminServicesPanel({ plan = "free" }: { plan?: Plan }) {
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
-      <div className="space-y-6">
+    <div className="grid gap-5 xl:grid-cols-[minmax(0,0.95fr)_minmax(21rem,0.75fr)] xl:items-start">
+      <div className="space-y-5">
         <AdminServiceForm
           onServiceCreated={() => loadServices(true)}
           plan={plan}
@@ -148,7 +148,7 @@ export function AdminServicesPanel({ plan = "free" }: { plan?: Plan }) {
           rulesLoading={loading}
         />
 
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-3">
           <MetricCard
             label="Services publiés"
             value={services.length}
@@ -167,7 +167,7 @@ export function AdminServicesPanel({ plan = "free" }: { plan?: Plan }) {
         </div>
       </div>
 
-      <Card className="admin-card border-border/70 bg-card/90 backdrop-blur">
+      <Card className="admin-card xl:sticky xl:top-24">
         <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-1">
             <CardTitle>Vos prestations</CardTitle>
@@ -187,7 +187,7 @@ export function AdminServicesPanel({ plan = "free" }: { plan?: Plan }) {
           </Button>
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {actionMessage ? (
             <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
               {actionMessage}
@@ -205,7 +205,7 @@ export function AdminServicesPanel({ plan = "free" }: { plan?: Plan }) {
               {[...Array(3)].map((_, index) => (
                 <div
                   key={index}
-                  className="rounded-2xl border border-border/70 bg-muted/40 p-4"
+                  className="rounded-xl border border-white/10 bg-white/5 p-4"
                 >
                   <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
                   <div className="mt-3 h-3 w-1/2 animate-pulse rounded bg-muted" />
@@ -214,7 +214,7 @@ export function AdminServicesPanel({ plan = "free" }: { plan?: Plan }) {
               ))}
             </div>
           ) : services.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border/80 bg-muted/30 px-5 py-8 text-center">
+            <div className="rounded-xl border border-dashed border-white/15 bg-white/5 px-5 py-8 text-center">
               <p className="font-medium">Aucun service disponible pour le moment.</p>
               <p className="mt-2 text-sm text-muted-foreground">
                 Ajoutez votre première prestation avec le formulaire pour alimenter
@@ -226,9 +226,9 @@ export function AdminServicesPanel({ plan = "free" }: { plan?: Plan }) {
               {services.map((service) => (
                 <article
                   key={service.id}
-                  className="flex gap-4 rounded-2xl border border-border/70 bg-background/70 p-3 shadow-sm"
+                  className="group/service flex flex-col gap-3 rounded-xl border border-white/10 bg-white/5 p-3 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/10 sm:flex-row sm:gap-4"
                 >
-                  <div className="size-20 shrink-0 overflow-hidden rounded-xl bg-muted">
+                  <div className="h-36 w-full shrink-0 overflow-hidden rounded-lg bg-muted sm:size-20">
                     {service.image ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -249,17 +249,17 @@ export function AdminServicesPanel({ plan = "free" }: { plan?: Plan }) {
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="text-base font-semibold">{service.name}</h3>
                           {service.featured ? (
-                            <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                            <span className="rounded-full bg-amber-300/15 px-2.5 py-1 text-xs font-medium text-amber-100">
                               Mis en avant
                             </span>
                           ) : null}
                         </div>
 
                         <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                          <span className="rounded-full bg-muted px-2.5 py-1">
+                          <span className="rounded-full bg-white/10 px-2.5 py-1">
                             {service.category}
                           </span>
-                          <span className="rounded-full bg-muted px-2.5 py-1">
+                          <span className="rounded-full bg-white/10 px-2.5 py-1">
                             {service.city} · {service.neighborhood}
                           </span>
                         </div>
@@ -741,10 +741,10 @@ function ServiceField({
 
 function MetricCard({ label, value, helper }: MetricCardProps) {
   return (
-    <Card className="admin-card border-border/70 bg-card/80 backdrop-blur">
+    <Card className="admin-card">
       <CardContent className="space-y-2 pt-4">
         <p className="text-sm text-muted-foreground">{label}</p>
-        <p className="text-3xl font-semibold tracking-tight">{value}</p>
+        <p className="text-3xl font-semibold tracking-tight text-white">{value}</p>
         <p className="text-sm text-muted-foreground">{helper}</p>
       </CardContent>
     </Card>

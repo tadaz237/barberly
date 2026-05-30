@@ -17,6 +17,7 @@ import {
 } from "lucide-react"
 import { AdminServicesPanel } from "@/src/components/admin/admin-services-panel"
 import { SignOutButton } from "@/src/components/auth/sign-out-button"
+import { PwaInstallButton } from "@/src/components/pwa-install-button"
 import { auth } from "@/src/lib/auth"
 import {
   countCataloguesByOwner,
@@ -75,11 +76,20 @@ export default async function AdminPage() {
   const platformAdmin = isPlatformAdmin(session.user.email)
 
   return (
-    <main className="min-h-screen bg-linear-to-b from-background via-background to-muted/30">
-      <header className="sticky top-0 z-10 border-b border-border/60 bg-background/85 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+    <main className="relative min-h-screen overflow-hidden bg-black text-white">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-size-[56px_56px] opacity-50"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-linear-to-b from-amber-400/10 via-pink-500/5 to-transparent"
+      />
+
+      <header className="sticky top-0 z-20 border-b border-white/10 bg-black/75 backdrop-blur-xl">
+        <div className="mx-auto flex w-full max-w-7xl flex-col items-stretch gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border/70 bg-muted sm:size-10">
+            <div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/10 sm:size-10">
               {user.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -88,40 +98,40 @@ export default async function AdminPage() {
                   className="size-full object-cover"
                 />
               ) : (
-                <UserRound className="size-5 text-muted-foreground" />
+                <UserRound className="size-5 text-white/55" />
               )}
             </div>
             <div className="min-w-0 leading-tight">
               <div className="flex flex-wrap items-center gap-1.5">
-                <p className="truncate text-sm font-semibold">{user.name}</p>
+                <p className="truncate text-sm font-semibold text-white">{user.name}</p>
                 <KycBadge status={status} />
                 <PlanBadge plan={plan} />
               </div>
               {user.email ? (
-                <p className="hidden truncate text-xs text-muted-foreground sm:block">
+                <p className="hidden truncate text-xs text-white/45 sm:block">
                   {user.email}
                 </p>
               ) : null}
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
             <Link
               href="/marketplace"
-              className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-400/20 dark:text-emerald-300"
+              className="inline-flex h-9 items-center gap-2 rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 text-xs font-semibold text-emerald-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-300/20"
             >
               <Store className="size-4" />
               <span className="hidden sm:inline">Market-place</span>
             </Link>
             <Link
               href="/admin/reservations"
-              className="inline-flex items-center gap-2 rounded-full border border-pink-400/40 bg-pink-400/10 px-3 py-1.5 text-xs font-semibold text-pink-700 transition-colors hover:bg-pink-400/20 dark:text-pink-300"
+              className="inline-flex h-9 items-center gap-2 rounded-full border border-pink-300/30 bg-pink-300/10 px-3 text-xs font-semibold text-pink-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-pink-300/20"
             >
               <CalendarCheck className="size-4" />
               <span className="hidden sm:inline">Mes réservations</span>
             </Link>
             <Link
               href="/admin/catalogues"
-              className="hidden items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted sm:inline-flex"
+              className="hidden h-9 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 text-xs font-medium text-white/70 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white sm:inline-flex"
             >
               <Images className="size-4" />
               Catalogues
@@ -129,31 +139,32 @@ export default async function AdminPage() {
             {platformAdmin ? (
               <Link
                 href="/platform/kyc"
-                className="inline-flex items-center gap-2 rounded-full border border-amber-400/40 bg-amber-400/10 px-3 py-1.5 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-400/20 dark:text-amber-300"
+                className="inline-flex h-9 items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 text-xs font-semibold text-amber-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-amber-300/20"
               >
                 <ShieldEllipsis className="size-4" />
                 <span className="hidden sm:inline">Validation KYC</span>
               </Link>
             ) : null}
+            <PwaInstallButton />
             <SignOutButton />
           </div>
         </div>
       </header>
 
-      <section className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-6 sm:gap-8 sm:px-6 sm:py-10 lg:px-8 lg:py-14">
+      <section className="relative mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:gap-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
         <KycBanner status={status} submission={submission} />
 
-        <div className="grid gap-5 rounded-3xl border border-border/70 bg-card/80 p-5 shadow-sm backdrop-blur sm:gap-6 sm:rounded-[2rem] sm:p-8 lg:grid-cols-[minmax(0,1.1fr)_320px] lg:items-end">
+        <div className="grid gap-5 rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_24px_80px_-50px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:gap-6 sm:p-6 lg:grid-cols-[minmax(0,1.1fr)_320px] lg:items-end">
           <div className="space-y-4">
-            <span className="inline-flex w-fit rounded-full border border-border/70 bg-muted/60 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-muted-foreground sm:text-xs sm:tracking-[0.2em]">
+            <span className="inline-flex w-fit rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-white/55 sm:text-xs sm:tracking-[0.2em]">
               Espace pro
             </span>
 
             <div className="space-y-3">
-              <h1 className="max-w-3xl font-heading text-2xl font-semibold tracking-tight sm:text-3xl lg:text-4xl">
+              <h1 className="max-w-3xl font-heading text-2xl font-semibold tracking-tight text-white sm:text-3xl lg:text-4xl">
                 Gérez vos prestations et votre profil pro
               </h1>
-              <p className="max-w-2xl text-sm leading-6 text-muted-foreground sm:text-base">
+              <p className="max-w-2xl text-sm leading-6 text-white/60 sm:text-base">
                 Publiez de nouvelles coiffures, suivez leur visibilité sur la
                 marketplace et maintenez votre profil à jour pour rassurer
                 votre clientèle.
@@ -356,11 +367,11 @@ function BannerShell({
   const c = TONE_CLASSES[tone]
   return (
     <div
-      className={`overflow-hidden rounded-3xl border p-5 shadow-sm sm:rounded-[2rem] sm:p-6 ${c.container}`}
+      className={`overflow-hidden rounded-2xl border p-5 shadow-[0_18px_60px_-42px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:p-6 ${c.container}`}
     >
       <div className="flex items-start gap-4">
         <span
-          className={`flex size-10 shrink-0 items-center justify-center rounded-2xl ring-1 ${c.icon}`}
+          className={`flex size-10 shrink-0 items-center justify-center rounded-xl ring-1 ${c.icon}`}
         >
           <Icon className="size-5" />
         </span>
@@ -395,7 +406,7 @@ function BannerCta({
   return (
     <Link
       href={href}
-      className={`inline-flex w-fit items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-semibold transition-colors ${cls}`}
+      className={`inline-flex w-fit items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 ${cls}`}
     >
       {label}
       <ArrowRight className="size-4" />
@@ -423,9 +434,9 @@ function DeadlineDate({ deadline }: { deadline: string }) {
 function KycGateCard({ status }: { status: KycStatus }) {
   const blocked = status === "blocked"
   return (
-    <div className="rounded-3xl border border-dashed border-border bg-card/50 p-8 text-center backdrop-blur sm:rounded-[2rem] sm:p-12">
+    <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.04] p-8 text-center shadow-[0_18px_60px_-42px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:p-12">
       <div
-        className={`mx-auto inline-flex size-12 items-center justify-center rounded-2xl ${
+        className={`mx-auto inline-flex size-12 items-center justify-center rounded-xl ${
           blocked ? "bg-red-500/15" : "bg-muted"
         }`}
       >
@@ -450,7 +461,7 @@ function KycGateCard({ status }: { status: KycStatus }) {
         className={`mt-5 inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold shadow-lg transition-colors ${
           blocked
             ? "bg-red-500 text-white shadow-red-500/30 hover:bg-red-400"
-            : "bg-amber-400 text-amber-950 shadow-amber-500/20 hover:bg-amber-300"
+            : "bg-amber-300 text-amber-950 shadow-amber-500/20 hover:bg-amber-200"
         }`}
       >
         {blocked ? "Renvoyer mes documents" : "Compléter mon KYC"}
@@ -511,43 +522,43 @@ function PlanCard({
     : `${cataloguesCount} (illimité)`
 
   return (
-    <div className="grid gap-4 rounded-3xl border border-amber-400/30 bg-linear-to-br from-amber-400/10 via-amber-500/5 to-transparent p-5 shadow-sm">
+    <div className="grid gap-4 rounded-2xl border border-amber-300/25 bg-linear-to-br from-amber-300/15 via-white/5 to-white/[0.025] p-5 shadow-[0_18px_55px_-35px_rgba(251,191,36,0.75)]">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-700 dark:text-amber-300">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-200">
             Mon forfait
           </p>
-          <p className="text-lg font-semibold">{PLAN_LABEL[plan]}</p>
+          <p className="text-lg font-semibold text-white">{PLAN_LABEL[plan]}</p>
         </div>
-        <Crown className="size-6 text-amber-500" />
+        <Crown className="size-6 text-amber-300" />
       </div>
 
       <ul className="space-y-1.5 text-sm">
         <li className="flex items-center justify-between gap-2">
-          <span className="text-muted-foreground">Prestations publiées</span>
-          <strong>{servicesLimitDisplay}</strong>
+          <span className="text-white/55">Prestations publiées</span>
+          <strong className="text-white">{servicesLimitDisplay}</strong>
         </li>
         <li className="flex items-center justify-between gap-2">
-          <span className="text-muted-foreground">Rythme de publication</span>
-          <strong>{publishRhythmDisplay}</strong>
+          <span className="text-white/55">Rythme de publication</span>
+          <strong className="text-white">{publishRhythmDisplay}</strong>
         </li>
         <li className="flex items-center justify-between gap-2">
-          <span className="text-muted-foreground">Catalogues</span>
-          <strong>{cataloguesLimitDisplay}</strong>
+          <span className="text-white/55">Catalogues</span>
+          <strong className="text-white">{cataloguesLimitDisplay}</strong>
         </li>
       </ul>
 
       {plan !== "premium" ? (
         <Link
           href="/admin/plans"
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-400 px-5 py-2.5 text-sm font-semibold text-amber-950 shadow-lg shadow-amber-500/20 transition-colors hover:bg-amber-300"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-300 px-5 py-2.5 text-sm font-semibold text-amber-950 shadow-lg shadow-amber-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-amber-200"
         >
           <Sparkles className="size-4" />
           Passer à un plan supérieur
           <ArrowRight className="size-4" />
         </Link>
       ) : (
-        <p className="text-center text-xs text-amber-700 dark:text-amber-200">
+        <p className="text-center text-xs text-amber-100">
           Vous êtes sur le forfait le plus complet 🎉
         </p>
       )}

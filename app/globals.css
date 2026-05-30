@@ -132,11 +132,13 @@
 
 @layer components {
   .admin-card {
-    @apply rounded-2xl border bg-card text-card-foreground shadow-lg
-           transition-all duration-300 hover:shadow-2xl;
+    @apply rounded-xl border border-white/10 bg-white/5 text-card-foreground
+           shadow-[0_18px_65px_-48px_rgba(0,0,0,0.95)] backdrop-blur-xl
+           transition-[border-color,box-shadow,transform,background-color] duration-200 ease-out;
   }
   
   .admin-card:hover {
-    @apply border-border;
+    @apply -translate-y-0.5 border-white/20 bg-white/[0.06]
+           shadow-[0_24px_80px_-52px_rgba(0,0,0,0.95)];
   }
 }

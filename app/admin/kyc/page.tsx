@@ -18,6 +18,10 @@ import {
   type KycStatus,
 } from "@/src/lib/users-store";
 
+function getRequestTimestamp() {
+  return Date.now();
+}
+
 export default async function KycPage() {
   const session = await auth();
   if (!session?.user?.id) {
@@ -34,6 +38,7 @@ export default async function KycPage() {
 
   const showForm =
     status === "none" || status === "rejected" || status === "blocked";
+  const requestTimestamp = getRequestTimestamp();
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
@@ -64,6 +69,7 @@ export default async function KycPage() {
             reason={submission.rejectionReason}
             deadline={submission.rejectionDeadline}
             tone="amber"
+            now={requestTimestamp}
           />
         ) : null}
 
@@ -72,6 +78,7 @@ export default async function KycPage() {
             reason={submission.rejectionReason}
             deadline={submission.rejectionDeadline}
             tone="red"
+            now={requestTimestamp}
           />
         ) : null}
 
@@ -199,10 +206,12 @@ function RejectionInfo({
   reason,
   deadline,
   tone,
+  now,
 }: {
   reason: string;
   deadline?: string;
   tone: "amber" | "red";
+  now: number;
 }) {
   const c =
     tone === "red"
@@ -219,15 +228,15 @@ function RejectionInfo({
       <blockquote className="text-sm leading-6">{reason}</blockquote>
       {deadline ? (
         <p className="text-xs text-white/60">
-          Délai pour corriger : <DeadlineText deadline={deadline} />
+          Délai pour corriger : <DeadlineText deadline={deadline} now={now} />
         </p>
       ) : null}
     </section>
   );
 }
 
-function DeadlineText({ deadline }: { deadline: string }) {
-  const remaining = new Date(deadline).getTime() - Date.now();
+function DeadlineText({ deadline, now }: { deadline: string; now: number }) {
+  const remaining = new Date(deadline).getTime() - now;
   if (remaining <= 0) {
     return <strong className="text-red-200">délai écoulé</strong>;
   }

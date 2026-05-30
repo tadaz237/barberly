@@ -11,9 +11,8 @@ import {
 } from "lucide-react";
 import { PlanSubscribeButton } from "@/src/components/admin/plan-subscribe-button";
 import { auth } from "@/src/lib/auth";
+import { PLAN_PRICES, type PaidPlan } from "@/src/lib/plans";
 import { getUserPlan, type Plan } from "@/src/lib/users-store";
-
-type PaidPlan = "essential" | "pro" | "premium";
 
 type PlanCardData = {
   plan: PaidPlan;
@@ -23,17 +22,19 @@ type PlanCardData = {
   Icon: typeof Sparkles;
   highlight: boolean;
   perks: string[];
-  ctaLabel: string;
   cardAccent: string;
-  buttonClass: string;
+};
+
+type PlansPageProps = {
+  searchParams?: Promise<{ payment?: string | string[] }>;
 };
 
 const PLANS: PlanCardData[] = [
   {
     plan: "essential",
     name: "Essentiel",
-    price: 1500,
-    tagline: "Pour démarrer sereinement et publier plus chaque jour.",
+    price: PLAN_PRICES.essential,
+    tagline: "Pour demarrer sereinement et publier plus chaque jour.",
     Icon: Sparkles,
     highlight: false,
     perks: [
@@ -42,17 +43,14 @@ const PLANS: PlanCardData[] = [
       "Statistiques de base",
       "Support par e-mail",
     ],
-    ctaLabel: "Choisir Essentiel",
     cardAccent:
       "border-sky-400/30 bg-linear-to-br from-sky-400/10 via-sky-500/5 to-transparent",
-    buttonClass:
-      "bg-sky-500 text-white hover:bg-sky-400 shadow-sky-500/30",
   },
   {
     plan: "pro",
     name: "Pro",
-    price: 2000,
-    tagline: "Pour les coiffeurs actifs qui veulent gagner en visibilité.",
+    price: PLAN_PRICES.pro,
+    tagline: "Pour les coiffeurs actifs qui veulent gagner en visibilite.",
     Icon: TrendingUp,
     highlight: true,
     perks: [
@@ -62,40 +60,38 @@ const PLANS: PlanCardData[] = [
       "Badge Pro visible par les clientes",
       "Support prioritaire",
     ],
-    ctaLabel: "Choisir Pro",
     cardAccent:
       "border-violet-400/40 bg-linear-to-br from-violet-400/15 via-purple-500/10 to-transparent ring-1 ring-violet-400/30",
-    buttonClass:
-      "bg-violet-500 text-white hover:bg-violet-400 shadow-violet-500/30",
   },
   {
     plan: "premium",
     name: "Premium",
-    price: 3000,
-    tagline: "Pour les pros qui veulent être en tête, sans aucune limite.",
+    price: PLAN_PRICES.premium,
+    tagline: "Pour les pros qui veulent etre en tete, sans aucune limite.",
     Icon: Crown,
     highlight: false,
     perks: [
-      "Prestations illimitées",
-      "Catalogues illimités",
+      "Prestations illimitees",
+      "Catalogues illimites",
       "Top du classement marketplace",
-      "Badge Premium doré",
-      "Support dédié",
+      "Badge Premium dore",
+      "Support dedie",
     ],
-    ctaLabel: "Choisir Premium",
     cardAccent:
       "border-amber-400/40 bg-linear-to-br from-amber-400/15 via-amber-500/10 to-transparent",
-    buttonClass:
-      "bg-amber-400 text-amber-950 hover:bg-amber-300 shadow-amber-500/30",
   },
 ];
 
-export default async function PlansPage() {
+export default async function PlansPage({ searchParams }: PlansPageProps) {
   const session = await auth();
   if (!session?.user?.id) {
     redirect("/login?callbackUrl=/admin/plans");
   }
   const currentPlan: Plan = await getUserPlan(session.user.id);
+  const query = searchParams ? await searchParams : {};
+  const payment =
+    typeof query.payment === "string" ? query.payment : query.payment?.[0];
+  const paymentNotice = getPaymentNotice(payment);
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
@@ -123,13 +119,21 @@ export default async function PlansPage() {
             Forfaits Barberly
           </span>
           <h1 className="text-balance text-4xl font-semibold tracking-tight sm:text-5xl">
-            Boostez votre activité avec le forfait qui vous correspond.
+            Boostez votre activite avec le forfait qui vous correspond.
           </h1>
           <p className="text-sm leading-6 text-white/60 sm:text-base">
-            Publiez plus de prestations, créez plus de catalogues, et apparaissez
+            Publiez plus de prestations, creez plus de catalogues, et apparaissez
             en haut du marketplace. Tarifs mensuels en francs CFA.
           </p>
         </header>
+
+        {paymentNotice ? (
+          <div
+            className={`rounded-3xl border p-4 text-center text-sm font-medium sm:rounded-[2rem] ${paymentNotice.className}`}
+          >
+            {paymentNotice.message}
+          </div>
+        ) : null}
 
         <section className="grid gap-5 sm:gap-6 lg:grid-cols-3">
           {PLANS.map(
@@ -141,9 +145,7 @@ export default async function PlansPage() {
               Icon,
               highlight,
               perks,
-              ctaLabel,
               cardAccent,
-              buttonClass,
             }) => {
               const isCurrent = currentPlan === plan;
               return (
@@ -189,12 +191,7 @@ export default async function PlansPage() {
                   </ul>
 
                   <div className="mt-auto">
-                    <PlanSubscribeButton
-                      plan={plan}
-                      isCurrent={isCurrent}
-                      cta={ctaLabel}
-                      highlightClass={buttonClass}
-                    />
+                    <PlanSubscribeButton isCurrent={isCurrent} />
                   </div>
                 </article>
               );
@@ -205,11 +202,45 @@ export default async function PlansPage() {
         <section className="rounded-3xl border border-white/10 bg-white/3 p-5 text-center text-xs text-white/45 sm:rounded-[2rem] sm:p-6">
           <p>
             <Camera className="mr-1 inline-block size-3.5 text-amber-300" />
-            Pour le MVP, la souscription est instantanée et gratuite. Le paiement
-            réel (Mobile Money, carte) sera intégré dans une prochaine étape.
+            Les souscriptions payantes sont isolées pour le moment. Les plans
+            restent visibles, mais leur activation sera bientôt disponible.
           </p>
         </section>
       </div>
     </main>
   );
+}
+
+function getPaymentNotice(payment: string | undefined) {
+  if (payment === "accepted") {
+    return {
+      className: "border-amber-400/30 bg-amber-400/10 text-amber-100",
+      message:
+        "Paiement isolé pour le moment. Aucun forfait n'a été activé automatiquement.",
+    };
+  }
+
+  if (payment === "disabled" || payment === "waiting" || payment === "pending") {
+    return {
+      className: "border-amber-400/30 bg-amber-400/10 text-amber-100",
+      message:
+        "La souscription payante sera bientôt disponible. Aucun forfait n'a été modifié.",
+    };
+  }
+
+  if (payment === "refused" || payment === "cancelled") {
+    return {
+      className: "border-red-400/30 bg-red-400/10 text-red-100",
+      message: "Paiement refusé ou annulé. Votre forfait n'a pas été modifié.",
+    };
+  }
+
+  if (payment === "failed" || payment === "error" || payment === "missing") {
+    return {
+      className: "border-red-400/30 bg-red-400/10 text-red-100",
+      message: "Verification du paiement impossible. Reessayez dans un instant.",
+    };
+  }
+
+  return null;
 }

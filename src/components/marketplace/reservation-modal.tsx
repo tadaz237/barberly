@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+} from "react";
 import { createPortal } from "react-dom";
 import {
   AlertCircle,
@@ -27,6 +33,10 @@ type Props = {
   serviceDurationMin: number;
 };
 
+function subscribeToClientMounted() {
+  return () => {};
+}
+
 export function ReservationModal({
   open,
   onClose,
@@ -35,7 +45,11 @@ export function ReservationModal({
   servicePrice,
   serviceDurationMin,
 }: Props) {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(
+    subscribeToClientMounted,
+    () => true,
+    () => false,
+  );
   const [step, setStep] = useState<Step>("date");
   const [monthCursor, setMonthCursor] = useState(() => firstDayOfMonth(new Date()));
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -53,10 +67,6 @@ export function ReservationModal({
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -72,10 +82,7 @@ export function ReservationModal({
 
   useEffect(() => {
     if (!selectedDate) return;
-    setSlotsLoading(true);
-    setSelectedSlot(null);
-    setSlots([]);
-    setError(null);
+    let ignore = false;
     const dayISO = selectedDate.toISOString();
     fetch(
       `/api/reservations/availability?service=${encodeURIComponent(
@@ -83,9 +90,18 @@ export function ReservationModal({
       )}&date=${encodeURIComponent(dayISO)}`,
     )
       .then((r) => r.json())
-      .then((data) => setSlots(Array.isArray(data.slots) ? data.slots : []))
-      .catch(() => setError("Impossible de charger les créneaux."))
-      .finally(() => setSlotsLoading(false));
+      .then((data) => {
+        if (!ignore) setSlots(Array.isArray(data.slots) ? data.slots : []);
+      })
+      .catch(() => {
+        if (!ignore) setError("Impossible de charger les créneaux.");
+      })
+      .finally(() => {
+        if (!ignore) setSlotsLoading(false);
+      });
+    return () => {
+      ignore = true;
+    };
   }, [selectedDate, serviceId]);
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -181,6 +197,10 @@ export function ReservationModal({
               selectedDate={selectedDate}
               onPick={(d) => {
                 setSelectedDate(d);
+                setSelectedSlot(null);
+                setSlots([]);
+                setSlotsLoading(true);
+                setError(null);
                 setStep("slot");
               }}
             />

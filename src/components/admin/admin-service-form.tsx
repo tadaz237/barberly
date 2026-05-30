@@ -199,7 +199,7 @@ export function AdminServiceForm({
   }
 
   return (
-    <Card className="admin-card border-border/70 bg-card/90 backdrop-blur">
+    <Card className="admin-card">
       <CardHeader>
         <CardTitle>Publier une prestation</CardTitle>
         <CardDescription>
@@ -432,7 +432,7 @@ function ImagePicker({ imageDataUrl, onChoose, onClear, disabled }: ImagePickerP
           type="button"
           onClick={onChoose}
           disabled={disabled}
-          className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/80 bg-muted/30 text-muted-foreground transition-colors hover:border-primary/60 hover:bg-muted/50"
+          className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-white/15 bg-white/5 text-muted-foreground transition-all duration-200 hover:border-amber-300/40 hover:bg-white/10"
         >
           <div className="flex size-10 items-center justify-center rounded-xl bg-background shadow-sm">
             <ImageIcon className="size-5" />

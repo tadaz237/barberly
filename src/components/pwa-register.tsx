@@ -7,9 +7,11 @@ export function PwaRegister() {
     if (!("serviceWorker" in navigator)) return;
 
     const register = () => {
-      navigator.serviceWorker.register("/sw.js").catch(() => {
-        // Registration can fail in unsupported/private browser contexts.
-      });
+      navigator.serviceWorker
+        .register("/sw.js", { scope: "/", updateViaCache: "none" })
+        .catch(() => {
+          // Registration can fail in unsupported/private browser contexts.
+        });
     };
 
     if (document.readyState === "complete") {

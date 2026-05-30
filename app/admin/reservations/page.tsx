@@ -9,7 +9,6 @@ import {
   Phone,
   ShieldX,
   Sparkles,
-  UserRound,
 } from "lucide-react";
 import { ReservationStatusActions } from "@/src/components/admin/reservation-status-actions";
 import { auth } from "@/src/lib/auth";
