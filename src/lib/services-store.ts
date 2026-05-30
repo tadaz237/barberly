@@ -144,6 +144,16 @@ export async function getServiceById(
   return service ? toServiceItem(service, toOwnerMeta(service.owner)) : undefined;
 }
 
+export async function getServiceByOwner(
+  ownerId: string,
+  id: string,
+): Promise<ServiceItem | undefined> {
+  const service = await prisma.service.findFirst({
+    where: { id, ownerId },
+  });
+  return service ? toServiceItem(service) : undefined;
+}
+
 export async function getServicesByOwner(
   ownerId: string,
 ): Promise<ServiceItem[]> {

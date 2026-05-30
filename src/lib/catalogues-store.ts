@@ -71,6 +71,17 @@ export async function getCatalogueById(
   return catalogue ? toCatalogue(catalogue) : undefined;
 }
 
+export async function getCatalogueByOwner(
+  ownerId: string,
+  id: string,
+): Promise<Catalogue | undefined> {
+  const catalogue = await prisma.catalogue.findFirst({
+    where: { id, ownerId },
+    include: { photos: true },
+  });
+  return catalogue ? toCatalogue(catalogue) : undefined;
+}
+
 export async function addCatalogue(
   input: CreateCatalogueInput,
 ): Promise<Catalogue> {
@@ -133,4 +144,15 @@ export async function updateCatalogue(
     });
     return catalogue ? toCatalogue(catalogue) : undefined;
   });
+}
+
+export async function deleteCatalogue(
+  ownerId: string,
+  id: string,
+): Promise<boolean> {
+  const deleted = await prisma.catalogue.deleteMany({
+    where: { id, ownerId },
+  });
+
+  return deleted.count > 0;
 }

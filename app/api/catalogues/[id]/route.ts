@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
-import { updateCatalogue } from "@/src/lib/catalogues-store";
-import { uploadImageToCloudinary } from "@/src/lib/cloudinary";
+import {
+  deleteCatalogue,
+  getCatalogueByOwner,
+  updateCatalogue,
+} from "@/src/lib/catalogues-store";
+import {
+  deleteImagesFromCloudinary,
+  uploadImageToCloudinary,
+} from "@/src/lib/cloudinary";
 
 type IncomingPhoto = {
   image?: unknown;

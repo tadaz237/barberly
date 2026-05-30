@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
-import { uploadImageToCloudinary } from "@/src/lib/cloudinary";
-import { deleteService, updateService } from "@/src/lib/services-store";
+import {
+  deleteImageFromCloudinary,
+  uploadImageToCloudinary,
+} from "@/src/lib/cloudinary";
+import {
+  deleteService,
+  getServiceByOwner,
+  updateService,
+} from "@/src/lib/services-store";
 import {
   MAX_SERVICE_DURATION_MINUTES,
   validateServiceTextFields,
@@ -69,6 +76,14 @@ export async function PATCH(
   }
 
   const { id } = await params;
+  const existingService = await getServiceByOwner(session.user.id, id);
+
+  if (!existingService) {
+    return NextResponse.json(
+      { message: "Prestation introuvable ou non autorisee." },
+      { status: 404 },
+    );
+  }
 
   let body: IncomingPayload;
   try {
@@ -166,6 +181,20 @@ export async function PATCH(
     );
   }
 
+  if (existingService.image && service.image !== existingService.image) {
+    try {
+      await deleteImageFromCloudinary(existingService.image);
+    } catch {
+      return NextResponse.json(
+        {
+          message:
+            "Prestation mise a jour, mais l'ancienne photo Cloudinary n'a pas pu etre supprimee.",
+        },
+        { status: 502 },
+      );
+    }
+  }
+
   return NextResponse.json({
     service,
     message: "Prestation mise à jour.",
@@ -182,6 +211,27 @@ export async function DELETE(
   }
 
   const { id } = await params;
+  const service = await getServiceByOwner(session.user.id, id);
+
+  if (!service) {
+    return NextResponse.json(
+      { message: "Prestation introuvable ou non autorisee." },
+      { status: 404 },
+    );
+  }
+
+  try {
+    await deleteImageFromCloudinary(service.image);
+  } catch {
+    return NextResponse.json(
+      {
+        message:
+          "Suppression interrompue : la photo Cloudinary n'a pas pu etre supprimee. Reessayez avant de retirer la prestation.",
+      },
+      { status: 502 },
+    );
+  }
+
   const deleted = await deleteService(session.user.id, id);
 
   if (!deleted) {
@@ -191,5 +241,7 @@ export async function DELETE(
     );
   }
 
-  return NextResponse.json({ message: "Prestation supprimée." });
+  return NextResponse.json({
+    message: "Prestation supprimee avec sa photo Cloudinary.",
+  });
 }
