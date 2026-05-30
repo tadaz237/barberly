@@ -484,6 +484,35 @@ export async function verifyCredentials(
   return toPublic(user);
 }
 
+export async function getCredentialsUserByEmail(
+  email: string,
+): Promise<PublicUser | null> {
+  const user = await prisma.user.findUnique({
+    where: { email: normalizeEmail(email) },
+    include: { kyc: true },
+  });
+
+  if (!user?.passwordHash) return null;
+
+  return toPublic(user);
+}
+
+export async function updateCredentialsPassword(
+  email: string,
+  password: string,
+): Promise<boolean> {
+  const passwordHash = await hash(password, 10);
+  const updated = await prisma.user.updateMany({
+    where: {
+      email: normalizeEmail(email),
+      passwordHash: { not: null },
+    },
+    data: { passwordHash },
+  });
+
+  return updated.count > 0;
+}
+
 export async function upsertOAuthUser(
   input: OAuthUpsertInput,
 ): Promise<PublicUser> {

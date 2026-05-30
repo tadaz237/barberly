@@ -3,6 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { getGender } from "@/src/lib/gender";
 import { upsertOAuthUser, verifyCredentials } from "@/src/lib/users-store";
+import { consumeVerificationCode } from "@/src/lib/verification-codes";
 
 const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
 
@@ -21,17 +22,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Mot de passe", type: "password" },
+        twoFactorCode: { label: "Code", type: "text" },
       },
       async authorize(credentials) {
         const email =
           typeof credentials?.email === "string" ? credentials.email : "";
         const password =
           typeof credentials?.password === "string" ? credentials.password : "";
+        const twoFactorCode =
+          typeof credentials?.twoFactorCode === "string"
+            ? credentials.twoFactorCode
+            : "";
 
-        if (!email || !password) return null;
+        if (!email || !password || !twoFactorCode) return null;
 
         const user = await verifyCredentials(email, password);
         if (!user) return null;
+
+        const codeOk = await consumeVerificationCode({
+          email: user.email,
+          userId: user.id,
+          purpose: "two_factor",
+          code: twoFactorCode,
+        });
+
+        if (!codeOk) return null;
 
         return { id: user.id, name: user.name, email: user.email };
       },

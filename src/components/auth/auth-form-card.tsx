@@ -16,6 +16,7 @@ import {
   Loader2,
   LockKeyhole,
   Mail,
+  ShieldCheck,
   UserRound,
   X,
 } from "lucide-react";
@@ -81,6 +82,11 @@ export function AuthFormCard({
   const [status, setStatus] = useState<SubmitStatus>({ state: "idle" });
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
   const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(null);
+  const [twoFactorChallenge, setTwoFactorChallenge] = useState<{
+    email: string;
+    password: string;
+  } | null>(null);
+  const [twoFactorCode, setTwoFactorCode] = useState("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -182,25 +188,71 @@ export function AuthFormCard({
       return;
     }
 
-    setStatus({ state: "idle" });
-    startTransition(async () => {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (!result || result.error) {
+    if (twoFactorChallenge) {
+      if (!/^\d{6}$/.test(twoFactorCode.trim())) {
         setStatus({
           state: "error",
-          message: "Identifiants invalides.",
+          message: "Entrez le code à 6 chiffres reçu par e-mail.",
         });
         return;
       }
 
-      setStatus({ state: "success", message: "Connecté. Redirection…" });
-      router.push(redirectTo);
-      router.refresh();
+      setStatus({ state: "idle" });
+      startTransition(async () => {
+        const result = await signIn("credentials", {
+          email: twoFactorChallenge.email,
+          password: twoFactorChallenge.password,
+          twoFactorCode: twoFactorCode.trim(),
+          redirect: false,
+        });
+
+        if (!result || result.error) {
+          setStatus({
+            state: "error",
+            message: "Code invalide ou expiré.",
+          });
+          return;
+        }
+
+        setStatus({ state: "success", message: "Connecté. Redirection..." });
+        router.push(redirectTo);
+        router.refresh();
+      });
+      return;
+    }
+
+    setStatus({ state: "idle" });
+    startTransition(async () => {
+      try {
+        const response = await fetch("/api/auth/two-factor/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+        const payload = (await response.json().catch(() => null)) as
+          | { message?: string }
+          | null;
+
+        if (!response.ok) {
+          setStatus({
+            state: "error",
+            message: payload?.message ?? "Connexion impossible.",
+          });
+          return;
+        }
+
+        setTwoFactorChallenge({ email, password });
+        setTwoFactorCode("");
+        setStatus({
+          state: "success",
+          message: payload?.message ?? "Code envoyé. Vérifiez votre boîte mail.",
+        });
+      } catch {
+        setStatus({
+          state: "error",
+          message: "Erreur réseau. Réessayez dans un instant.",
+        });
+      }
     });
   }
 
@@ -268,51 +320,118 @@ export function AuthFormCard({
             </div>
           ) : null}
 
-          <div className={mode === "register" ? "grid gap-3 sm:grid-cols-2" : "space-y-3"}>
-            {fields.map(({ id, label, type, placeholder, autoComplete, icon }) => {
-              const Icon = FIELD_ICONS[icon];
-              const isPassword = type === "password";
-              const isVisible = isPassword && visiblePasswords[id];
-              const effectiveType = isPassword ? (isVisible ? "text" : "password") : type;
-              return (
-              <div key={id} className="space-y-1">
-                <label htmlFor={id} className="text-xs font-medium text-white/80 sm:text-sm">
-                  {label}
+          {twoFactorChallenge ? (
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+                <ShieldCheck className="mt-0.5 size-4 shrink-0" />
+                <p>
+                  Un code de sécurité a été envoyé à{" "}
+                  <strong>{twoFactorChallenge.email}</strong>.
+                </p>
+              </div>
+
+              <div className="space-y-1">
+                <label
+                  htmlFor="twoFactorCode"
+                  className="text-xs font-medium text-white/80 sm:text-sm"
+                >
+                  Code de sécurité
                 </label>
                 <div className="relative">
-                  <Icon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/40" />
+                  <ShieldCheck className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/40" />
                   <Input
-                    id={id}
-                    name={id}
-                    type={effectiveType}
-                    placeholder={placeholder}
-                    autoComplete={autoComplete}
-                    className={`h-10 rounded-xl border-white/10 bg-white/5 pl-10 text-sm text-white placeholder:text-white/40 shadow-inner shadow-black/20 focus-visible:border-amber-400/40 focus-visible:ring-amber-400/20 sm:h-11 sm:rounded-2xl ${isPassword ? "pr-10" : ""}`}
+                    id="twoFactorCode"
+                    name="twoFactorCode"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]{6}"
+                    maxLength={6}
+                    autoComplete="one-time-code"
+                    placeholder="000000"
+                    value={twoFactorCode}
+                    onChange={(event) =>
+                      setTwoFactorCode(
+                        event.target.value.replace(/\D/g, "").slice(0, 6),
+                      )
+                    }
+                    className="h-11 rounded-2xl border-white/10 bg-white/5 pl-10 text-sm text-white placeholder:text-white/40 shadow-inner shadow-black/20 focus-visible:border-amber-400/40 focus-visible:ring-amber-400/20"
                     required
-                    minLength={isPassword && mode === "register" ? 8 : undefined}
                     disabled={isPending}
                   />
-                  {isPassword ? (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setVisiblePasswords((prev) => ({
-                          ...prev,
-                          [id]: !prev[id],
-                        }))
-                      }
-                      aria-label={isVisible ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-                      aria-pressed={isVisible}
-                      className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-white/40 transition-colors hover:text-amber-200 focus-visible:text-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/40"
-                    >
-                      {isVisible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                    </button>
-                  ) : null}
                 </div>
               </div>
-              );
-            })}
-          </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setTwoFactorChallenge(null);
+                  setTwoFactorCode("");
+                  setStatus({ state: "idle" });
+                }}
+                disabled={isPending}
+                className="text-sm font-semibold text-amber-200 underline-offset-4 transition-colors hover:text-amber-100 hover:underline disabled:opacity-60"
+              >
+                Changer l'adresse e-mail
+              </button>
+            </div>
+          ) : (
+            <div className={mode === "register" ? "grid gap-3 sm:grid-cols-2" : "space-y-3"}>
+              {fields.map(({ id, label, type, placeholder, autoComplete, icon }) => {
+                const Icon = FIELD_ICONS[icon];
+                const isPassword = type === "password";
+                const isVisible = isPassword && visiblePasswords[id];
+                const effectiveType = isPassword ? (isVisible ? "text" : "password") : type;
+                return (
+                <div key={id} className="space-y-1">
+                  <label htmlFor={id} className="text-xs font-medium text-white/80 sm:text-sm">
+                    {label}
+                  </label>
+                  <div className="relative">
+                    <Icon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/40" />
+                    <Input
+                      id={id}
+                      name={id}
+                      type={effectiveType}
+                      placeholder={placeholder}
+                      autoComplete={autoComplete}
+                      className={`h-10 rounded-xl border-white/10 bg-white/5 pl-10 text-sm text-white placeholder:text-white/40 shadow-inner shadow-black/20 focus-visible:border-amber-400/40 focus-visible:ring-amber-400/20 sm:h-11 sm:rounded-2xl ${isPassword ? "pr-10" : ""}`}
+                      required
+                      minLength={isPassword && mode === "register" ? 8 : undefined}
+                      disabled={isPending}
+                    />
+                    {isPassword ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setVisiblePasswords((prev) => ({
+                            ...prev,
+                            [id]: !prev[id],
+                          }))
+                        }
+                        aria-label={isVisible ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                        aria-pressed={isVisible}
+                        className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-white/40 transition-colors hover:text-amber-200 focus-visible:text-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/40"
+                      >
+                        {isVisible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+                );
+              })}
+            </div>
+          )}
+
+          {mode === "login" && !twoFactorChallenge ? (
+            <div className="flex justify-end">
+              <Link
+                href="/reset-password"
+                className="text-sm font-semibold text-amber-200 underline-offset-4 transition-colors hover:text-amber-100 hover:underline"
+              >
+                Mot de passe oublié ?
+              </Link>
+            </div>
+          ) : null}
 
           <Button
             type="submit"
@@ -326,13 +445,13 @@ export function AuthFormCard({
               </>
             ) : (
               <>
-                {submitLabel}
+                {twoFactorChallenge ? "Valider le code" : submitLabel}
                 <ArrowRight className="size-4" />
               </>
             )}
           </Button>
 
-          {mode === "login" ? (
+          {mode === "login" && !twoFactorChallenge ? (
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/40">
                 <span className="h-px flex-1 bg-white/10" />

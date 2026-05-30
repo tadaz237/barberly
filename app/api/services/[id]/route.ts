@@ -188,7 +188,7 @@ export async function PATCH(
       return NextResponse.json(
         {
           message:
-            "Prestation mise a jour, mais l'ancienne photo Cloudinary n'a pas pu etre supprimee.",
+            "Prestation mise a jour, mais une ancienne photo n'a pas pu etre retiree completement.",
         },
         { status: 502 },
       );
@@ -226,7 +226,7 @@ export async function DELETE(
     return NextResponse.json(
       {
         message:
-          "Suppression interrompue : la photo Cloudinary n'a pas pu etre supprimee. Reessayez avant de retirer la prestation.",
+          "Suppression impossible pour le moment. Reessayez avant de retirer la prestation.",
       },
       { status: 502 },
     );
@@ -242,6 +242,6 @@ export async function DELETE(
   }
 
   return NextResponse.json({
-    message: "Prestation supprimee avec sa photo Cloudinary.",
+    message: "Prestation supprimee.",
   });
 }

@@ -45,6 +45,11 @@ enum Gender {
   female
 }
 
+enum VerificationCodePurpose {
+  two_factor
+  password_reset
+}
+
 model User {
   id            String       @id @default(cuid())
   name          String
@@ -63,8 +68,27 @@ model User {
   services   Service[]
   catalogues Catalogue[]
   planPayments PlanPayment[]
+  verificationCodes VerificationCode[]
 
   @@map("users")
+}
+
+model VerificationCode {
+  id         String                  @id @default(cuid())
+  userId     String?
+  user       User?                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  email      String
+  purpose    VerificationCodePurpose
+  codeHash   String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  attempts   Int                     @default(0)
+  createdAt  DateTime                @default(now())
+
+  @@index([email, purpose, createdAt])
+  @@index([expiresAt])
+  @@index([userId])
+  @@map("verification_codes")
 }
 
 model PlanPayment {

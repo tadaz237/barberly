@@ -181,8 +181,7 @@ export async function PATCH(
   } catch {
     return NextResponse.json(
       {
-        message:
-          "Catalogue mis a jour, mais une ancienne photo Cloudinary n'a pas pu etre supprimee.",
+        message: "Mise a jour impossible pour le moment. Reessayez.",
       },
       { status: 502 },
     );
@@ -221,7 +220,7 @@ export async function DELETE(
     return NextResponse.json(
       {
         message:
-          "Suppression interrompue : une photo Cloudinary n'a pas pu etre supprimee. Reessayez avant de retirer le catalogue.",
+          "Suppression impossible pour le moment. Reessayez avant de retirer le catalogue.",
       },
       { status: 502 },
     );
@@ -237,6 +236,6 @@ export async function DELETE(
   }
 
   return NextResponse.json({
-    message: "Catalogue supprime avec ses photos Cloudinary.",
+    message: "Catalogue supprimé.",
   });
 }
