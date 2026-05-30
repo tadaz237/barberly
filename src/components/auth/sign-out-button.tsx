@@ -10,7 +10,7 @@ export function SignOutButton() {
       type="button"
       variant="outline"
       size="sm"
-      onClick={() => signOut({ callbackUrl: "/login" })}
+      onClick={() => signOut({ redirectTo: "/" })}
       aria-label="Déconnexion"
       className="shrink-0 gap-2"
     >

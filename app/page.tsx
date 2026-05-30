@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Check, ChevronRight, Scissors, Sparkles } from "lucide-react";
 import { selectRole } from "@/src/lib/role-actions";
 import { getUserRole, type UserRole } from "@/src/lib/user-role";
+import { auth } from "@/src/lib/auth";
 
 type RoleCard = {
   role: UserRole;
@@ -58,7 +59,8 @@ const ROLE_LABEL: Record<UserRole, string> = {
 };
 
 export default async function Home() {
-  const currentRole = await getUserRole();
+  const [currentRole, session] = await Promise.all([getUserRole(), auth()]);
+  const isConnected = Boolean(session?.user?.id);
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
       <div
@@ -88,12 +90,14 @@ export default async function Home() {
           </Link>
 
           <Link
-            href="/login"
+            href={isConnected ? "/admin" : "/login"}
             className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-white/70 transition-colors hover:text-amber-200 sm:text-sm"
           >
-            <span className="hidden sm:inline">Déjà inscrit ?</span>
+            <span className="hidden sm:inline">
+              {isConnected ? "Vous êtes connecté" : "Déjà inscrit ?"}
+            </span>
             <span className="text-amber-300 underline-offset-4 hover:underline">
-              Se connecter
+              {isConnected ? "Mon espace" : "Se connecter"}
             </span>
             <ChevronRight className="size-4" />
           </Link>

@@ -12,6 +12,7 @@ import {
   ShieldEllipsis,
   ShieldX,
   Sparkles,
+  Store,
   UserRound,
 } from "lucide-react"
 import { AdminServicesPanel } from "@/src/components/admin/admin-services-panel"
@@ -20,7 +21,10 @@ import { auth } from "@/src/lib/auth"
 import {
   countCataloguesByOwner,
 } from "@/src/lib/catalogues-store"
-import { countServicesPublishedToday } from "@/src/lib/services-store"
+import {
+  countServicesByOwner,
+  countServicesPublishedToday,
+} from "@/src/lib/services-store"
 import {
   PLAN_LABEL,
   getKycSubmission,
@@ -39,15 +43,23 @@ export default async function AdminPage() {
     redirect("/login")
   }
 
-  const [resolvedUser, submission, plan, limits, todayCount, cataloguesCount] =
-    await Promise.all([
-      getUserById(session.user.id),
-      getKycSubmission(session.user.id),
-      getUserPlan(session.user.id),
-      getUserLimits(session.user.id),
-      countServicesPublishedToday(session.user.id),
-      countCataloguesByOwner(session.user.id),
-    ])
+  const [
+    resolvedUser,
+    submission,
+    plan,
+    limits,
+    todayCount,
+    servicesCount,
+    cataloguesCount,
+  ] = await Promise.all([
+    getUserById(session.user.id),
+    getKycSubmission(session.user.id),
+    getUserPlan(session.user.id),
+    getUserLimits(session.user.id),
+    countServicesPublishedToday(session.user.id),
+    countServicesByOwner(session.user.id),
+    countCataloguesByOwner(session.user.id),
+  ])
 
   const user = resolvedUser ?? {
     id: session.user.id,
@@ -93,6 +105,13 @@ export default async function AdminPage() {
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            <Link
+              href="/marketplace"
+              className="inline-flex items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition-colors hover:bg-emerald-400/20 dark:text-emerald-300"
+            >
+              <Store className="size-4" />
+              <span className="hidden sm:inline">Market-place</span>
+            </Link>
             <Link
               href="/admin/reservations"
               className="inline-flex items-center gap-2 rounded-full border border-pink-400/40 bg-pink-400/10 px-3 py-1.5 text-xs font-semibold text-pink-700 transition-colors hover:bg-pink-400/20 dark:text-pink-300"
@@ -146,6 +165,7 @@ export default async function AdminPage() {
             plan={plan}
             limits={limits}
             todayCount={todayCount}
+            servicesCount={servicesCount}
             cataloguesCount={cataloguesCount}
           />
         </div>
@@ -255,7 +275,7 @@ function KycBanner({
         ) : null}
         {submission.rejectionDeadline ? (
           <p className="text-sm text-muted-foreground">
-            Délai restant : <Countdown deadline={submission.rejectionDeadline} />.
+            Date limite : <DeadlineDate deadline={submission.rejectionDeadline} />.
             Passé ce délai, votre compte sera bloqué jusqu&apos;à correction.
           </p>
         ) : null}
@@ -383,26 +403,19 @@ function BannerCta({
   )
 }
 
-function Countdown({ deadline }: { deadline: string }) {
-  const remaining = new Date(deadline).getTime() - Date.now()
-  if (remaining <= 0) return <span>écoulé</span>
-
-  const hours = Math.floor(remaining / (60 * 60 * 1000))
-  const minutes = Math.floor((remaining % (60 * 60 * 1000)) / (60 * 1000))
-
-  if (hours >= 24) {
-    const days = Math.floor(hours / 24)
-    const remHours = hours % 24
-    return (
-      <strong className="font-semibold text-foreground">
-        {days} j {remHours} h
-      </strong>
-    )
+function DeadlineDate({ deadline }: { deadline: string }) {
+  const date = new Date(deadline)
+  if (!Number.isFinite(date.getTime())) {
+    return <strong className="font-semibold text-foreground">à confirmer</strong>
   }
 
   return (
     <strong className="font-semibold text-foreground">
-      {hours} h {minutes.toString().padStart(2, "0")} min
+      {date.toLocaleDateString("fr-FR")} à{" "}
+      {date.toLocaleTimeString("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })}
     </strong>
   )
 }
@@ -470,16 +483,29 @@ function PlanCard({
   plan,
   limits,
   todayCount,
+  servicesCount,
   cataloguesCount,
 }: {
   plan: Plan
-  limits: { servicesPerDay: number; cataloguesMax: number }
+  limits: {
+    servicesPerDay: number
+    servicesMax: number
+    servicePublishCooldownDays: number
+    cataloguesMax: number
+  }
   todayCount: number
+  servicesCount: number
   cataloguesCount: number
 }) {
-  const servicesLimitDisplay = Number.isFinite(limits.servicesPerDay)
-    ? `${todayCount}/${limits.servicesPerDay}`
-    : `${todayCount} (illimité)`
+  const servicesLimitDisplay = Number.isFinite(limits.servicesMax)
+    ? `${servicesCount}/${limits.servicesMax}`
+    : `${servicesCount} (illimité)`
+  const publishRhythmDisplay =
+    limits.servicePublishCooldownDays > 0
+      ? `1 tous les ${limits.servicePublishCooldownDays} jours`
+      : Number.isFinite(limits.servicesPerDay)
+        ? `${todayCount}/${limits.servicesPerDay} aujourd'hui`
+        : "illimité"
   const cataloguesLimitDisplay = Number.isFinite(limits.cataloguesMax)
     ? `${cataloguesCount}/${limits.cataloguesMax}`
     : `${cataloguesCount} (illimité)`
@@ -498,8 +524,12 @@ function PlanCard({
 
       <ul className="space-y-1.5 text-sm">
         <li className="flex items-center justify-between gap-2">
-          <span className="text-muted-foreground">Prestations aujourd&apos;hui</span>
+          <span className="text-muted-foreground">Prestations publiées</span>
           <strong>{servicesLimitDisplay}</strong>
+        </li>
+        <li className="flex items-center justify-between gap-2">
+          <span className="text-muted-foreground">Rythme de publication</span>
+          <strong>{publishRhythmDisplay}</strong>
         </li>
         <li className="flex items-center justify-between gap-2">
           <span className="text-muted-foreground">Catalogues</span>

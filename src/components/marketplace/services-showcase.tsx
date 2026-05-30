@@ -7,10 +7,11 @@ import {
   ChevronDown,
   Clock3,
   Crown,
+  LocateFixed,
   MapPin,
+  Navigation,
   Scissors,
   Search,
-  ShieldCheck,
   Sparkles,
   Star,
   TrendingUp,
@@ -24,6 +25,8 @@ type ServicesResponse = {
 };
 
 type SortKey = "featured" | "price-asc" | "price-desc" | "duration-asc";
+type NearbySortKey = SortKey | "distance";
+type UserLocation = { latitude: number; longitude: number };
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "featured", label: "Recommandés" },
@@ -32,6 +35,42 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "duration-asc", label: "Durée courte" },
 ];
 
+const RADIUS_OPTIONS = [5, 10, 20, 50];
+
+function hasServiceCoordinates(service: ServiceItem) {
+  return (
+    typeof service.latitude === "number" &&
+    Number.isFinite(service.latitude) &&
+    typeof service.longitude === "number" &&
+    Number.isFinite(service.longitude)
+  );
+}
+
+function distanceKm(from: UserLocation, service: ServiceItem) {
+  if (!hasServiceCoordinates(service)) return null;
+
+  const earthRadiusKm = 6371;
+  const toRad = (value: number) => (value * Math.PI) / 180;
+  const dLat = toRad((service.latitude as number) - from.latitude);
+  const dLng = toRad((service.longitude as number) - from.longitude);
+  const lat1 = toRad(from.latitude);
+  const lat2 = toRad(service.latitude as number);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1) *
+      Math.cos(lat2) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return earthRadiusKm * c;
+}
+
+function formatDistance(value: number) {
+  if (value < 1) return `${Math.round(value * 1000)} m`;
+  if (value < 10) return `${value.toFixed(1).replace(".", ",")} km`;
+  return `${Math.round(value)} km`;
+}
+
 export function ServicesShowcase() {
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,7 +78,12 @@ export function ServicesShowcase() {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [activeGender, setActiveGender] = useState<"all" | "male" | "female">("all");
-  const [sort, setSort] = useState<SortKey>("featured");
+  const [sort, setSort] = useState<NearbySortKey>("featured");
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [nearbyEnabled, setNearbyEnabled] = useState(false);
+  const [radiusKm, setRadiusKm] = useState(20);
+  const [locating, setLocating] = useState(false);
+  const [locationMessage, setLocationMessage] = useState<string | null>(null);
 
   useEffect(() => {
     void loadServices();
@@ -77,6 +121,25 @@ export function ServicesShowcase() {
     [services]
   );
 
+  const geolocatedServices = useMemo(
+    () => services.filter(hasServiceCoordinates).length,
+    [services]
+  );
+
+  const distanceByServiceId = useMemo(() => {
+    const distances = new Map<string, number>();
+    if (!userLocation) return distances;
+
+    services.forEach((service) => {
+      const distance = distanceKm(userLocation, service);
+      if (distance !== null) {
+        distances.set(service.id, distance);
+      }
+    });
+
+    return distances;
+  }, [services, userLocation]);
+
   const filtered = useMemo(() => {
     let result = services;
 
@@ -100,7 +163,20 @@ export function ServicesShowcase() {
       result = result.filter((s) => s.ownerGender === activeGender);
     }
 
+    if (nearbyEnabled && userLocation) {
+      result = result.filter((s) => {
+        const distance = distanceByServiceId.get(s.id);
+        return distance !== undefined && distance <= radiusKm;
+      });
+    }
+
     switch (sort) {
+      case "distance":
+        return [...result].sort((a, b) => {
+          const distanceA = distanceByServiceId.get(a.id) ?? Number.POSITIVE_INFINITY;
+          const distanceB = distanceByServiceId.get(b.id) ?? Number.POSITIVE_INFINITY;
+          return distanceA - distanceB;
+        });
       case "price-asc":
         return [...result].sort((a, b) => a.price - b.price);
       case "price-desc":
@@ -113,32 +189,77 @@ export function ServicesShowcase() {
           (a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured))
         );
     }
-  }, [services, query, activeCategory, activeGender, sort]);
+  }, [
+    services,
+    query,
+    activeCategory,
+    activeGender,
+    nearbyEnabled,
+    userLocation,
+    distanceByServiceId,
+    radiusKm,
+    sort,
+  ]);
 
   const hasFilter =
     query.trim().length > 0 ||
     activeCategory !== "all" ||
-    activeGender !== "all";
+    activeGender !== "all" ||
+    nearbyEnabled;
 
   function resetFilters() {
     setQuery("");
     setActiveCategory("all");
     setActiveGender("all");
+    setNearbyEnabled(false);
+    setSort("featured");
+  }
+
+  function enableNearbySearch() {
+    if (nearbyEnabled) {
+      setNearbyEnabled(false);
+      if (sort === "distance") setSort("featured");
+      return;
+    }
+
+    if (userLocation) {
+      setNearbyEnabled(true);
+      setSort("distance");
+      setLocationMessage(null);
+      return;
+    }
+
+    if (!("geolocation" in navigator)) {
+      setLocationMessage("La géolocalisation n'est pas disponible sur ce navigateur.");
+      return;
+    }
+
+    setLocating(true);
+    setLocationMessage(null);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+        setNearbyEnabled(true);
+        setSort("distance");
+        setLocating(false);
+      },
+      () => {
+        setLocationMessage(
+          "Position indisponible. Autorisez la localisation pour voir les pros proches."
+        );
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+    );
   }
 
   return (
     <div className="space-y-8 sm:space-y-12">
-      <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-linear-to-br from-zinc-900/80 via-zinc-900/60 to-zinc-950/80 p-6 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur sm:rounded-[2rem] sm:p-10 lg:p-14">
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -top-32 -right-32 size-96 rounded-full bg-pink-400/20 blur-[120px]"
-        />
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -bottom-32 -left-32 size-96 rounded-full bg-amber-400/15 blur-[120px]"
-        />
-
-        <div className="relative space-y-5 sm:space-y-6">
+      <section className="grid gap-6 border-b border-white/10 pb-6 sm:pb-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] lg:items-end">
+        <div className="space-y-5 sm:space-y-6">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.25em] text-white/70 backdrop-blur">
             <Sparkles className="size-3.5" />
             Beauté à domicile
@@ -165,9 +286,20 @@ export function ServicesShowcase() {
             <span aria-hidden className="size-1 rounded-full bg-white/20" />
             <span>{locations} zones desservies</span>
             <span aria-hidden className="size-1 rounded-full bg-white/20" />
+            <span>{geolocatedServices} avec position</span>
+            <span aria-hidden className="size-1 rounded-full bg-white/20" />
             <span>Réservation directe</span>
           </div>
         </div>
+        <NearbyPanel
+          enabled={nearbyEnabled}
+          locating={locating}
+          radiusKm={radiusKm}
+          locationMessage={locationMessage}
+          userLocation={userLocation}
+          onToggle={enableNearbySearch}
+          onRadiusChange={setRadiusKm}
+        />
       </section>
 
       <Filters
@@ -178,6 +310,8 @@ export function ServicesShowcase() {
         onGenderChange={setActiveGender}
         sort={sort}
         onSortChange={setSort}
+        nearbyEnabled={nearbyEnabled}
+        hasLocation={Boolean(userLocation)}
       />
 
       <section className="space-y-4">
@@ -208,13 +342,94 @@ export function ServicesShowcase() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map((service) => (
-              <ServiceCard key={service.id} service={service} />
+              <ServiceCard
+                key={service.id}
+                service={service}
+                distance={
+                  userLocation ? distanceByServiceId.get(service.id) : undefined
+                }
+              />
             ))}
           </div>
         )}
       </section>
 
       <ProCta />
+    </div>
+  );
+}
+
+function NearbyPanel({
+  enabled,
+  locating,
+  radiusKm,
+  locationMessage,
+  userLocation,
+  onToggle,
+  onRadiusChange,
+}: {
+  enabled: boolean;
+  locating: boolean;
+  radiusKm: number;
+  locationMessage: string | null;
+  userLocation: UserLocation | null;
+  onToggle: () => void;
+  onRadiusChange: (value: number) => void;
+}) {
+  return (
+    <div className="rounded-3xl border border-emerald-400/25 bg-emerald-400/10 p-4 shadow-[0_18px_50px_-28px_rgba(52,211,153,0.55)] sm:p-5">
+      <div className="flex items-start gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-2xl bg-emerald-400/15 ring-1 ring-emerald-300/25">
+          <Navigation className="size-5 text-emerald-200" />
+        </span>
+        <div className="min-w-0 flex-1 space-y-3">
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-white">Trouver près de moi</p>
+            <p className="text-xs leading-5 text-white/55">
+              Classe les prestations géolocalisées autour de votre position.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={onToggle}
+              disabled={locating}
+              className={`inline-flex h-10 items-center gap-2 rounded-2xl px-4 text-sm font-semibold transition-colors disabled:opacity-60 ${
+                enabled
+                  ? "bg-emerald-300 text-emerald-950 hover:bg-emerald-200"
+                  : "border border-emerald-300/30 bg-emerald-300/10 text-emerald-100 hover:bg-emerald-300/15"
+              }`}
+            >
+              <LocateFixed className="size-4" />
+              {locating ? "Recherche..." : enabled ? "Proximité activée" : "Activer"}
+            </button>
+            <select
+              value={radiusKm}
+              onChange={(event) => onRadiusChange(Number(event.target.value))}
+              disabled={!enabled}
+              className="h-10 rounded-2xl border border-white/15 bg-white/5 px-3 text-sm font-medium text-white shadow-inner shadow-black/20 outline-none disabled:opacity-50"
+              aria-label="Rayon de recherche"
+            >
+              {RADIUS_OPTIONS.map((radius) => (
+                <option key={radius} value={radius} className="bg-zinc-900">
+                  {radius} km
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {userLocation && enabled ? (
+            <p className="text-xs text-emerald-100/70">
+              Rayon actif : {radiusKm} km autour de votre position.
+            </p>
+          ) : null}
+
+          {locationMessage ? (
+            <p className="text-xs leading-5 text-amber-200">{locationMessage}</p>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }
@@ -258,79 +473,90 @@ function Filters({
   onGenderChange,
   sort,
   onSortChange,
+  nearbyEnabled,
+  hasLocation,
 }: {
   categories: string[];
   activeCategory: string;
   onCategoryChange: (c: string) => void;
   activeGender: "all" | "male" | "female";
   onGenderChange: (g: "all" | "male" | "female") => void;
-  sort: SortKey;
-  onSortChange: (s: SortKey) => void;
+  sort: NearbySortKey;
+  onSortChange: (s: NearbySortKey) => void;
+  nearbyEnabled: boolean;
+  hasLocation: boolean;
 }) {
-  return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/40">
-          Univers
-        </span>
-        <GenderChip
-          label="Tous"
-          active={activeGender === "all"}
-          tone="neutral"
-          onClick={() => onGenderChange("all")}
-        />
-        <GenderChip
-          label="Femme"
-          active={activeGender === "female"}
-          tone="pink"
-          onClick={() => onGenderChange("female")}
-        />
-        <GenderChip
-          label="Homme"
-          active={activeGender === "male"}
-          tone="amber"
-          onClick={() => onGenderChange("male")}
-        />
-      </div>
+  const sortOptions: { value: NearbySortKey; label: string }[] =
+    nearbyEnabled && hasLocation
+      ? [{ value: "distance", label: "Plus proches" }, ...SORT_OPTIONS]
+      : SORT_OPTIONS;
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-wrap gap-2">
-          <CategoryChip
-            label="Toutes"
-            active={activeCategory === "all"}
-            onClick={() => onCategoryChange("all")}
+  return (
+    <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-4 shadow-[0_16px_50px_-30px_rgba(0,0,0,0.9)] backdrop-blur sm:p-5">
+      <div className="space-y-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/40">
+            Univers
+          </span>
+          <GenderChip
+            label="Tous"
+            active={activeGender === "all"}
+            tone="neutral"
+            onClick={() => onGenderChange("all")}
           />
-          {categories.map((c) => (
-            <CategoryChip
-              key={c}
-              label={c}
-              active={activeCategory === c}
-              onClick={() => onCategoryChange(c)}
-            />
-          ))}
+          <GenderChip
+            label="Femme"
+            active={activeGender === "female"}
+            tone="pink"
+            onClick={() => onGenderChange("female")}
+          />
+          <GenderChip
+            label="Homme"
+            active={activeGender === "male"}
+            tone="amber"
+            onClick={() => onGenderChange("male")}
+          />
         </div>
 
-      <div className="relative shrink-0">
-        <label htmlFor="marketplace-sort" className="sr-only">
-          Trier
-        </label>
-        <select
-          id="marketplace-sort"
-          value={sort}
-          onChange={(e) => onSortChange(e.target.value as SortKey)}
-          className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-white/15 bg-white/5 pr-9 pl-4 text-sm font-medium text-white shadow-inner shadow-black/20 backdrop-blur transition-colors focus:border-pink-400/40 focus:outline-none focus:ring-2 focus:ring-pink-400/20 sm:w-auto"
-        >
-          {SORT_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value} className="bg-zinc-900">
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        <ChevronDown
-          aria-hidden
-          className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white/40"
-        />
-      </div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-wrap gap-2">
+            <CategoryChip
+              label="Toutes"
+              active={activeCategory === "all"}
+              onClick={() => onCategoryChange("all")}
+            />
+            {categories.map((c) => (
+              <CategoryChip
+                key={c}
+                label={c}
+                active={activeCategory === c}
+                onClick={() => onCategoryChange(c)}
+              />
+            ))}
+          </div>
+
+          <div className="relative shrink-0">
+            <label htmlFor="marketplace-sort" className="sr-only">
+              Trier
+            </label>
+            <select
+              id="marketplace-sort"
+              value={sort}
+              onChange={(e) => onSortChange(e.target.value as NearbySortKey)}
+              className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-white/15 bg-white/5 pr-9 pl-4 text-sm font-medium text-white shadow-inner shadow-black/20 backdrop-blur transition-colors focus:border-pink-400/40 focus:outline-none focus:ring-2 focus:ring-pink-400/20 sm:w-auto"
+            >
+              {sortOptions.map((opt) => (
+                <option key={opt.value} value={opt.value} className="bg-zinc-900">
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              aria-hidden
+              className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white/40"
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -392,7 +618,13 @@ function CategoryChip({
   );
 }
 
-function ServiceCard({ service }: { service: ServiceItem }) {
+function ServiceCard({
+  service,
+  distance,
+}: {
+  service: ServiceItem;
+  distance?: number;
+}) {
   return (
     <Link
       href={`/marketplace/${service.id}`}
@@ -410,10 +642,6 @@ function ServiceCard({ service }: { service: ServiceItem }) {
           </ImageLightbox>
         ) : (
           <div className="flex size-full items-center justify-center">
-            <span
-              aria-hidden
-              className="pointer-events-none absolute -top-12 -right-12 size-40 rounded-full bg-pink-400/25 blur-3xl"
-            />
             <Scissors className="relative size-12 text-pink-200/40 drop-shadow-[0_0_12px_rgba(244,114,182,0.4)]" />
           </div>
         )}
@@ -450,6 +678,12 @@ function ServiceCard({ service }: { service: ServiceItem }) {
               <MapPin className="size-3.5 text-pink-300/80" />
               {service.city} · {service.neighborhood}
             </span>
+            {distance !== undefined ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/10 px-2 py-1 text-emerald-100">
+                <Navigation className="size-3.5 text-emerald-200" />
+                {formatDistance(distance)}
+              </span>
+            ) : null}
             <span className="inline-flex items-center gap-1.5">
               <Clock3 className="size-3.5 text-pink-300/80" />
               {service.duration} min
@@ -562,10 +796,6 @@ function EmptyState({
 function ProCta() {
   return (
     <section className="relative overflow-hidden rounded-3xl border border-amber-400/30 bg-linear-to-br from-amber-400/10 via-zinc-900/60 to-zinc-950/80 p-6 shadow-[0_20px_60px_-20px_rgba(251,191,36,0.2)] sm:rounded-[2rem] sm:p-10">
-      <span
-        aria-hidden
-        className="pointer-events-none absolute -top-20 -right-20 size-64 rounded-full bg-amber-400/20 blur-3xl"
-      />
       <div className="relative flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8">
         <div className="space-y-2">
           <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-200">

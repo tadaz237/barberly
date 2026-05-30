@@ -1,6 +1,13 @@
 "use client"
 
-import { useMemo, useRef, useState, type ChangeEvent } from "react"
+import {
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+  type ReactNode,
+} from "react"
 import { Camera, Crown, ImageIcon, X } from "lucide-react"
 
 import { Button } from "@/src/components/ui/button"
@@ -36,6 +43,9 @@ type ServicePayload = {
 type Props = {
   onServiceCreated: () => Promise<void> | void
   plan?: Plan
+  servicesCount?: number
+  latestServiceCreatedAt?: string
+  rulesLoading?: boolean
 }
 
 const initialValues: ServiceFormValues = {
@@ -50,8 +60,16 @@ const initialValues: ServiceFormValues = {
 }
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024
+const FREE_SERVICES_MAX = 7
+const FREE_COOLDOWN_MS = 2 * 24 * 60 * 60 * 1000
 
-export function AdminServiceForm({ onServiceCreated, plan = "free" }: Props) {
+export function AdminServiceForm({
+  onServiceCreated,
+  plan = "free",
+  servicesCount = 0,
+  latestServiceCreatedAt,
+  rulesLoading = false,
+}: Props) {
   const [values, setValues] = useState<ServiceFormValues>(initialValues)
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null)
   const [stagingImage, setStagingImage] = useState<string | null>(null)
@@ -61,9 +79,29 @@ export function AdminServiceForm({ onServiceCreated, plan = "free" }: Props) {
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const isPremium = plan === "premium"
 
+  const creationBlockedReason = useMemo(() => {
+    if (rulesLoading) {
+      return "Chargement de vos limites de publication..."
+    }
+    if (plan !== "free") return ""
+    if (servicesCount >= FREE_SERVICES_MAX) {
+      return "Votre forfait gratuit autorise 7 prestations maximum. Vous pouvez modifier ou supprimer une prestation existante."
+    }
+    if (!latestServiceCreatedAt) return ""
+
+    const latestTime = new Date(latestServiceCreatedAt).getTime()
+    if (!Number.isFinite(latestTime)) return ""
+
+    const nextAllowedAt = new Date(latestTime + FREE_COOLDOWN_MS)
+    if (Date.now() >= nextAllowedAt.getTime()) return ""
+
+    return `Le forfait gratuit permet de publier une prestation tous les 2 jours. Prochaine publication possible le ${nextAllowedAt.toLocaleDateString("fr-FR")} à ${nextAllowedAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}.`
+  }, [latestServiceCreatedAt, plan, rulesLoading, servicesCount])
+
   const isDisabled = useMemo(() => {
     return (
       submitting ||
+      Boolean(creationBlockedReason) ||
       !values.name.trim() ||
       !values.category.trim() ||
       !values.price.trim() ||
@@ -72,7 +110,7 @@ export function AdminServiceForm({ onServiceCreated, plan = "free" }: Props) {
       !values.neighborhood.trim() ||
       !values.description.trim()
     )
-  }, [submitting, values])
+  }, [creationBlockedReason, submitting, values])
 
   function updateField<Key extends keyof ServiceFormValues>(field: Key, value: ServiceFormValues[Key]) {
     setValues((current) => ({ ...current, [field]: value }))
@@ -108,7 +146,7 @@ export function AdminServiceForm({ onServiceCreated, plan = "free" }: Props) {
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setSubmitting(true)
     setSuccessMessage("")
@@ -173,11 +211,17 @@ export function AdminServiceForm({ onServiceCreated, plan = "free" }: Props) {
 
       <CardContent>
         <form className="space-y-5" onSubmit={handleSubmit}>
+          {creationBlockedReason ? (
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+              {creationBlockedReason}
+            </div>
+          ) : null}
+
           <ImagePicker
             imageDataUrl={imageDataUrl}
             onChoose={() => fileInputRef.current?.click()}
             onClear={clearImage}
-            disabled={submitting}
+            disabled={submitting || Boolean(creationBlockedReason)}
           />
           <input
             ref={fileInputRef}
@@ -312,7 +356,14 @@ export function AdminServiceForm({ onServiceCreated, plan = "free" }: Props) {
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-muted-foreground">
-              Publication via <span className="font-medium">POST /api/services</span>.
+              {plan === "free" ? (
+                "Gratuit : 7 prestations maximum, modification ou suppression possible."
+              ) : (
+                <>
+                  Publication via{" "}
+                  <span className="font-medium">POST /api/services</span>.
+                </>
+              )}
             </p>
             <Button type="submit" size="lg" disabled={isDisabled}>
               {submitting ? "Publication…" : "Publier la prestation"}
@@ -401,7 +452,7 @@ function ImagePicker({ imageDataUrl, onChoose, onClear, disabled }: ImagePickerP
 type FieldProps = {
   label: string
   htmlFor: string
-  children: React.ReactNode
+  children: ReactNode
 }
 
 function Field({ label, htmlFor, children }: FieldProps) {

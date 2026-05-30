@@ -4,8 +4,17 @@ import Google from "next-auth/providers/google";
 import { getGender } from "@/src/lib/gender";
 import { upsertOAuthUser, verifyCredentials } from "@/src/lib/users-store";
 
+const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  session: { strategy: "jwt" },
+  session: {
+    strategy: "jwt",
+    maxAge: SESSION_MAX_AGE,
+    updateAge: 60 * 60 * 24,
+  },
+  jwt: {
+    maxAge: SESSION_MAX_AGE,
+  },
   pages: { signIn: "/login" },
   providers: [
     Credentials({

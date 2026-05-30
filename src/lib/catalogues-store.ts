@@ -24,6 +24,8 @@ export type CreateCatalogueInput = {
   photos: { image: string; caption?: string; price?: number }[];
 };
 
+export type UpdateCatalogueInput = Omit<CreateCatalogueInput, "ownerId">;
+
 type CatalogueWithPhotos = PrismaCatalogue & { photos: CataloguePhoto[] };
 
 function toCatalogue(catalogue: CatalogueWithPhotos): Catalogue {
@@ -89,4 +91,46 @@ export async function addCatalogue(
     include: { photos: true },
   });
   return toCatalogue(catalogue);
+}
+
+export async function updateCatalogue(
+  ownerId: string,
+  id: string,
+  input: UpdateCatalogueInput,
+): Promise<Catalogue | undefined> {
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.catalogue.findFirst({
+      where: { id, ownerId },
+      select: { id: true },
+    });
+    if (!existing) return undefined;
+
+    await tx.catalogue.update({
+      where: { id },
+      data: {
+        name: input.name.trim(),
+        description: input.description?.trim() || null,
+      },
+    });
+
+    await tx.cataloguePhoto.deleteMany({ where: { catalogueId: id } });
+
+    if (input.photos.length > 0) {
+      await tx.cataloguePhoto.createMany({
+        data: input.photos.map((p, index) => ({
+          catalogueId: id,
+          image: p.image,
+          caption: p.caption?.trim() || null,
+          price: p.price ?? null,
+          position: index,
+        })),
+      });
+    }
+
+    const catalogue = await tx.catalogue.findUnique({
+      where: { id },
+      include: { photos: true },
+    });
+    return catalogue ? toCatalogue(catalogue) : undefined;
+  });
 }

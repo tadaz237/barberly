@@ -11,6 +11,8 @@ export type ServiceItem = {
   duration: number;
   city: string;
   neighborhood: string;
+  latitude?: number;
+  longitude?: number;
   description: string;
   image?: string;
   featured?: boolean;
@@ -33,10 +35,40 @@ export type CreateServiceInput = {
   featured?: boolean;
 };
 
+export type UpdateServiceInput = Omit<CreateServiceInput, "ownerId" | "image"> & {
+  image?: string | null;
+};
+
+const CITY_COORDINATES: Record<string, { latitude: number; longitude: number }> = {
+  abidjan: { latitude: 5.36, longitude: -4.0083 },
+  bamako: { latitude: 12.6392, longitude: -8.0029 },
+  cotonou: { latitude: 6.3703, longitude: 2.3912 },
+  dakar: { latitude: 14.7167, longitude: -17.4677 },
+  douala: { latitude: 4.0511, longitude: 9.7679 },
+  lyon: { latitude: 45.764, longitude: 4.8357 },
+  marseille: { latitude: 43.2965, longitude: 5.3698 },
+  paris: { latitude: 48.8566, longitude: 2.3522 },
+  yaounde: { latitude: 3.848, longitude: 11.5021 },
+};
+
+function normalizeCity(city: string) {
+  return city
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function getApproximateCoordinates(city: string) {
+  return CITY_COORDINATES[normalizeCity(city)];
+}
+
 function toServiceItem(
   service: Service,
   ownerMeta?: { plan: Plan; kycVerified: boolean; gender?: Gender },
 ): ServiceItem {
+  const coordinates = getApproximateCoordinates(service.city);
+
   return {
     id: service.id,
     ownerId: service.ownerId,
@@ -46,6 +78,8 @@ function toServiceItem(
     duration: service.duration,
     city: service.city,
     neighborhood: service.neighborhood,
+    latitude: coordinates?.latitude,
+    longitude: coordinates?.longitude,
     description: service.description,
     image: service.image ?? undefined,
     featured: service.featured,
@@ -107,6 +141,21 @@ export async function getServicesByOwner(
   return services.map((s) => toServiceItem(s));
 }
 
+export async function countServicesByOwner(ownerId: string): Promise<number> {
+  return prisma.service.count({ where: { ownerId } });
+}
+
+export async function getLatestServiceCreatedAt(
+  ownerId: string,
+): Promise<Date | null> {
+  const service = await prisma.service.findFirst({
+    where: { ownerId },
+    orderBy: { createdAt: "desc" },
+    select: { createdAt: true },
+  });
+  return service?.createdAt ?? null;
+}
+
 export async function countServicesPublishedToday(
   ownerId: string,
 ): Promise<number> {
@@ -135,4 +184,40 @@ export async function addService(
     },
   });
   return toServiceItem(service);
+}
+
+export async function updateService(
+  ownerId: string,
+  id: string,
+  input: UpdateServiceInput,
+): Promise<ServiceItem | undefined> {
+  const updated = await prisma.service.updateMany({
+    where: { id, ownerId },
+    data: {
+      name: input.name.trim(),
+      category: input.category.trim(),
+      price: Number(input.price),
+      duration: Number(input.duration),
+      city: input.city.trim(),
+      neighborhood: input.neighborhood.trim(),
+      description: input.description.trim(),
+      ...(input.image !== undefined ? { image: input.image } : {}),
+      featured: Boolean(input.featured),
+    },
+  });
+
+  if (updated.count === 0) return undefined;
+
+  const service = await prisma.service.findUnique({ where: { id } });
+  return service ? toServiceItem(service) : undefined;
+}
+
+export async function deleteService(
+  ownerId: string,
+  id: string,
+): Promise<boolean> {
+  const deleted = await prisma.service.deleteMany({
+    where: { id, ownerId },
+  });
+  return deleted.count > 0;
 }

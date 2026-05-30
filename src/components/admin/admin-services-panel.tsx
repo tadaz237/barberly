@@ -1,10 +1,29 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+  type ReactNode,
+} from "react"
+import { Camera, Crown, Edit3, ImageIcon, Loader2, Trash2, X } from "lucide-react"
 
 import { AdminServiceForm } from "@/src/components/admin/admin-service-form"
 import { Button } from "@/src/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/src/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/src/components/ui/dialog"
+import { ImageCropModal } from "@/src/components/ui/image-crop-modal"
+import { Input } from "@/src/components/ui/input"
 
 type ServiceItem = {
   id: string
@@ -18,6 +37,7 @@ type ServiceItem = {
   description: string
   image?: string
   featured?: boolean
+  createdAt: string
 }
 
 type ServicesResponse = {
@@ -31,11 +51,16 @@ export function AdminServicesPanel({ plan = "free" }: { plan?: Plan }) {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
+  const [actionMessage, setActionMessage] = useState("")
+  const [editingService, setEditingService] = useState<ServiceItem | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const featuredCount = useMemo(
     () => services.filter((service) => service.featured).length,
     [services]
   )
+
+  const latestServiceCreatedAt = services[0]?.createdAt
 
   const loadServices = useCallback(async (showRefreshingState = false) => {
     if (showRefreshingState) {
@@ -73,10 +98,55 @@ export function AdminServicesPanel({ plan = "free" }: { plan?: Plan }) {
     void loadServices()
   }, [loadServices])
 
+  async function handleDelete(service: ServiceItem) {
+    const confirmed = window.confirm(
+      `Supprimer définitivement la prestation "${service.name}" ?`
+    )
+    if (!confirmed) return
+
+    setDeletingId(service.id)
+    setErrorMessage("")
+    setActionMessage("")
+
+    try {
+      const response = await fetch(`/api/services/${service.id}`, {
+        method: "DELETE",
+      })
+      const data = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        throw new Error(
+          data && typeof data.message === "string"
+            ? data.message
+            : "Suppression impossible."
+        )
+      }
+
+      setActionMessage(
+        data && typeof data.message === "string"
+          ? data.message
+          : "Prestation supprimée."
+      )
+      await loadServices(true)
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Erreur inattendue."
+      )
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
       <div className="space-y-6">
-        <AdminServiceForm onServiceCreated={() => loadServices(true)} plan={plan} />
+        <AdminServiceForm
+          onServiceCreated={() => loadServices(true)}
+          plan={plan}
+          servicesCount={services.length}
+          latestServiceCreatedAt={latestServiceCreatedAt}
+          rulesLoading={loading}
+        />
 
         <div className="grid gap-4 sm:grid-cols-3">
           <MetricCard
@@ -118,6 +188,12 @@ export function AdminServicesPanel({ plan = "free" }: { plan?: Plan }) {
         </CardHeader>
 
         <CardContent className="space-y-4">
+          {actionMessage ? (
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">
+              {actionMessage}
+            </div>
+          ) : null}
+
           {errorMessage ? (
             <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
               {errorMessage}
@@ -189,8 +265,35 @@ export function AdminServicesPanel({ plan = "free" }: { plan?: Plan }) {
                         </div>
                       </div>
 
-                      <div className="text-sm font-medium text-foreground">
-                        {service.price.toLocaleString("fr-FR")} FCFA • {service.duration} min
+                      <div className="flex shrink-0 flex-col items-start gap-2 sm:items-end">
+                        <div className="text-sm font-medium text-foreground">
+                          {service.price.toLocaleString("fr-FR")} FCFA • {service.duration} min
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setEditingService(service)}
+                          >
+                            <Edit3 className="size-3.5" />
+                            Modifier
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            disabled={deletingId === service.id}
+                            onClick={() => handleDelete(service)}
+                          >
+                            {deletingId === service.id ? (
+                              <Loader2 className="size-3.5 animate-spin" />
+                            ) : (
+                              <Trash2 className="size-3.5" />
+                            )}
+                            Supprimer
+                          </Button>
+                        </div>
                       </div>
                     </div>
 
@@ -204,6 +307,22 @@ export function AdminServicesPanel({ plan = "free" }: { plan?: Plan }) {
           )}
         </CardContent>
       </Card>
+
+      {editingService ? (
+        <ServiceEditDialog
+          service={editingService}
+          plan={plan}
+          open={Boolean(editingService)}
+          onOpenChange={(open) => {
+            if (!open) setEditingService(null)
+          }}
+          onSaved={async (message) => {
+            setEditingService(null)
+            setActionMessage(message)
+            await loadServices(true)
+          }}
+        />
+      ) : null}
     </div>
   )
 }
@@ -212,6 +331,412 @@ type MetricCardProps = {
   label: string
   value: number
   helper: string
+}
+
+type ServiceFormValues = {
+  name: string
+  category: string
+  price: string
+  duration: string
+  city: string
+  neighborhood: string
+  description: string
+  featured: boolean
+}
+
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024
+
+function serviceToFormValues(service: ServiceItem): ServiceFormValues {
+  return {
+    name: service.name,
+    category: service.category,
+    price: String(service.price),
+    duration: String(service.duration),
+    city: service.city,
+    neighborhood: service.neighborhood,
+    description: service.description,
+    featured: Boolean(service.featured),
+  }
+}
+
+function ServiceEditDialog({
+  service,
+  plan,
+  open,
+  onOpenChange,
+  onSaved,
+}: {
+  service: ServiceItem
+  plan: Plan
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSaved: (message: string) => Promise<void> | void
+}) {
+  const [values, setValues] = useState<ServiceFormValues>(() =>
+    serviceToFormValues(service)
+  )
+  const [imageDataUrl, setImageDataUrl] = useState<string | null>(
+    service.image ?? null
+  )
+  const [stagingImage, setStagingImage] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
+  const isPremium = plan === "premium"
+
+  useEffect(() => {
+    if (!open) return
+    setValues(serviceToFormValues(service))
+    setImageDataUrl(service.image ?? null)
+    setStagingImage(null)
+    setSubmitting(false)
+    setErrorMessage("")
+  }, [open, service])
+
+  const isDisabled = useMemo(() => {
+    return (
+      submitting ||
+      !values.name.trim() ||
+      !values.category.trim() ||
+      !values.price.trim() ||
+      !values.duration.trim() ||
+      !values.city.trim() ||
+      !values.neighborhood.trim() ||
+      !values.description.trim()
+    )
+  }, [submitting, values])
+
+  function updateField<Key extends keyof ServiceFormValues>(
+    field: Key,
+    value: ServiceFormValues[Key],
+  ) {
+    setValues((current) => ({ ...current, [field]: value }))
+  }
+
+  function handleImageChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0]
+    event.target.value = ""
+    if (!file) return
+
+    if (!file.type.startsWith("image/")) {
+      setErrorMessage("Le fichier choisi n'est pas une image.")
+      return
+    }
+
+    if (file.size > MAX_IMAGE_BYTES) {
+      setErrorMessage("Image trop volumineuse (max 5 Mo).")
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        setStagingImage(reader.result)
+        setErrorMessage("")
+      }
+    }
+    reader.onerror = () => setErrorMessage("Lecture du fichier impossible.")
+    reader.readAsDataURL(file)
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setSubmitting(true)
+    setErrorMessage("")
+
+    try {
+      const response = await fetch(`/api/services/${service.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: values.name.trim(),
+          category: values.category.trim(),
+          price: Number(values.price),
+          duration: Number(values.duration),
+          city: values.city.trim(),
+          neighborhood: values.neighborhood.trim(),
+          description: values.description.trim(),
+          featured: isPremium && values.featured,
+          image: imageDataUrl,
+        }),
+      })
+      const data = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        throw new Error(
+          data && typeof data.message === "string"
+            ? data.message
+            : "Mise à jour impossible."
+        )
+      }
+
+      await onSaved(
+        data && typeof data.message === "string"
+          ? data.message
+          : "Prestation mise à jour."
+      )
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Erreur inattendue."
+      )
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Modifier la prestation</DialogTitle>
+            <DialogDescription>
+              Mettez à jour les informations visibles sur la marketplace.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form className="space-y-5" onSubmit={handleSubmit}>
+            <ServiceImagePicker
+              imageDataUrl={imageDataUrl}
+              onChoose={() => fileInputRef.current?.click()}
+              onClear={() => setImageDataUrl(null)}
+              disabled={submitting}
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              onChange={handleImageChange}
+              className="hidden"
+            />
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <ServiceField label="Nom de la coiffure" htmlFor="edit-service-name">
+                <Input
+                  id="edit-service-name"
+                  value={values.name}
+                  onChange={(event) => updateField("name", event.target.value)}
+                />
+              </ServiceField>
+
+              <ServiceField label="Catégorie" htmlFor="edit-service-category">
+                <Input
+                  id="edit-service-category"
+                  value={values.category}
+                  onChange={(event) =>
+                    updateField("category", event.target.value)
+                  }
+                />
+              </ServiceField>
+
+              <ServiceField label="Ville" htmlFor="edit-service-city">
+                <Input
+                  id="edit-service-city"
+                  value={values.city}
+                  onChange={(event) => updateField("city", event.target.value)}
+                />
+              </ServiceField>
+
+              <ServiceField label="Quartier" htmlFor="edit-service-neighborhood">
+                <Input
+                  id="edit-service-neighborhood"
+                  value={values.neighborhood}
+                  onChange={(event) =>
+                    updateField("neighborhood", event.target.value)
+                  }
+                />
+              </ServiceField>
+
+              <ServiceField label="Prix (FCFA)" htmlFor="edit-service-price">
+                <Input
+                  id="edit-service-price"
+                  type="number"
+                  min="0"
+                  step="100"
+                  value={values.price}
+                  onChange={(event) => updateField("price", event.target.value)}
+                />
+              </ServiceField>
+
+              <ServiceField label="Durée (minutes)" htmlFor="edit-service-duration">
+                <Input
+                  id="edit-service-duration"
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={values.duration}
+                  onChange={(event) =>
+                    updateField("duration", event.target.value)
+                  }
+                />
+              </ServiceField>
+            </div>
+
+
+            <ServiceField label="Description" htmlFor="edit-service-description">
+              <textarea
+                id="edit-service-description"
+                rows={4}
+                className="flex min-h-24 w-full rounded-xl border border-input bg-transparent px-3 py-2 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+                value={values.description}
+                onChange={(event) =>
+                  updateField("description", event.target.value)
+                }
+              />
+            </ServiceField>
+
+            <label
+              className={`flex items-start gap-3 rounded-2xl border p-4 text-sm transition-colors ${
+                isPremium
+                  ? "border-amber-400/40 bg-amber-400/5"
+                  : "cursor-not-allowed border-border/70 bg-muted/40 opacity-90"
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={isPremium && values.featured}
+                disabled={!isPremium || submitting}
+                onChange={(event) =>
+                  updateField("featured", event.target.checked)
+                }
+                className="mt-0.5 size-4 rounded border border-input accent-amber-500 disabled:cursor-not-allowed"
+              />
+              <span className="space-y-1">
+                <span className="flex items-center gap-2 font-medium">
+                  Mettre cette prestation en vedette
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-700 dark:text-amber-300">
+                    <Crown className="size-3" />
+                    Premium
+                  </span>
+                </span>
+                <span className="block text-muted-foreground">
+                  Réservé aux abonnés Premium.
+                </span>
+              </span>
+            </label>
+
+            {errorMessage ? (
+              <div className="rounded-xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                {errorMessage}
+              </div>
+            ) : null}
+
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                disabled={submitting}
+                onClick={() => onOpenChange(false)}
+              >
+                Annuler
+              </Button>
+              <Button type="submit" disabled={isDisabled}>
+                {submitting ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : null}
+                Enregistrer
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {stagingImage ? (
+        <ImageCropModal
+          src={stagingImage}
+          aspect={4 / 3}
+          title="Recadrer la photo de la prestation"
+          onSave={(croppedUrl) => {
+            setImageDataUrl(croppedUrl)
+            setStagingImage(null)
+          }}
+          onCancel={() => setStagingImage(null)}
+        />
+      ) : null}
+    </>
+  )
+}
+
+function ServiceImagePicker({
+  imageDataUrl,
+  onChoose,
+  onClear,
+  disabled,
+}: {
+  imageDataUrl: string | null
+  onChoose: () => void
+  onClear: () => void
+  disabled?: boolean
+}) {
+  return (
+    <div className="space-y-2">
+      <span className="text-sm font-medium">Photo de la prestation</span>
+      {imageDataUrl ? (
+        <div className="relative overflow-hidden rounded-2xl border border-border/70">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={imageDataUrl}
+            alt="Aperçu de la prestation"
+            className="aspect-video w-full object-cover"
+          />
+          <div className="absolute inset-x-3 bottom-3 flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={onChoose}
+              disabled={disabled}
+              className="inline-flex items-center gap-1.5 rounded-full bg-background/80 px-3 py-1.5 text-xs font-medium shadow backdrop-blur hover:bg-background"
+            >
+              <Camera className="size-3.5" />
+              Changer
+            </button>
+            <button
+              type="button"
+              onClick={onClear}
+              disabled={disabled}
+              aria-label="Retirer la photo"
+              className="inline-flex size-8 items-center justify-center rounded-full bg-background/80 text-foreground shadow backdrop-blur hover:bg-background"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onChoose}
+          disabled={disabled}
+          className="flex aspect-video w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/80 bg-muted/30 text-muted-foreground transition-colors hover:border-primary/60 hover:bg-muted/50"
+        >
+          <div className="flex size-10 items-center justify-center rounded-xl bg-background shadow-sm">
+            <ImageIcon className="size-5" />
+          </div>
+          <div className="text-center">
+            <p className="text-sm font-medium text-foreground">
+              Ajouter une photo de la coiffure
+            </p>
+            <p className="text-xs">PNG / JPEG / WEBP — max 5 Mo</p>
+          </div>
+        </button>
+      )}
+    </div>
+  )
+}
+
+function ServiceField({
+  label,
+  htmlFor,
+  children,
+}: {
+  label: string
+  htmlFor: string
+  children: ReactNode
+}) {
+  return (
+    <label className="grid gap-2 text-sm font-medium" htmlFor={htmlFor}>
+      <span>{label}</span>
+      {children}
+    </label>
+  )
 }
 
 function MetricCard({ label, value, helper }: MetricCardProps) {

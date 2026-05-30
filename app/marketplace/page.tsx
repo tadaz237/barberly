@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, UserRound } from "lucide-react";
 import { ServicesShowcase } from "@/src/components/marketplace/services-showcase";
+import { PwaInstallButton } from "@/src/components/pwa-install-button";
 import { auth } from "@/src/lib/auth";
 import { getUserById } from "@/src/lib/users-store";
 
@@ -33,33 +34,36 @@ export default async function MarketplacePage() {
             />
           </Link>
 
-          {user ? (
-            <Link
-              href="/admin"
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1 pr-3 pl-1 text-xs font-medium text-white/80 transition-colors hover:bg-white/10 sm:text-sm"
-            >
-              <span className="flex size-7 items-center justify-center overflow-hidden rounded-full bg-white/10">
-                {user.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={user.image} alt="" className="size-full object-cover" />
-                ) : (
-                  <UserRound className="size-3.5 text-white/60" />
-                )}
-              </span>
-              <span className="hidden truncate sm:block">{user.name}</span>
-              <ChevronRight className="size-3.5 text-white/50" />
-            </Link>
-          ) : (
-            <Link
-              href="/login"
-              className="inline-flex items-center gap-1 text-xs font-medium text-white/70 transition-colors hover:text-pink-200 sm:text-sm"
-            >
-              <span className="text-pink-300 underline-offset-4 hover:underline">
-                Se connecter
-              </span>
-              <ChevronRight className="size-4" />
-            </Link>
-          )}
+          <div className="flex items-center gap-2">
+            <PwaInstallButton />
+            {user ? (
+              <Link
+                href="/admin"
+                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1 pr-3 pl-1 text-xs font-medium text-white/80 transition-colors hover:bg-white/10 sm:text-sm"
+              >
+                <span className="flex size-7 items-center justify-center overflow-hidden rounded-full bg-white/10">
+                  {user.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={user.image} alt="" className="size-full object-cover" />
+                  ) : (
+                    <UserRound className="size-3.5 text-white/60" />
+                  )}
+                </span>
+                <span className="hidden truncate sm:block">{user.name}</span>
+                <ChevronRight className="size-3.5 text-white/50" />
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="inline-flex items-center gap-1 text-xs font-medium text-white/70 transition-colors hover:text-pink-200 sm:text-sm"
+              >
+                <span className="text-pink-300 underline-offset-4 hover:underline">
+                  Se connecter
+                </span>
+                <ChevronRight className="size-4" />
+              </Link>
+            )}
+          </div>
         </div>
       </header>
 

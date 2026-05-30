@@ -342,7 +342,7 @@ export function AuthFormCard({
 
               <button
                 type="button"
-                onClick={() => signIn("google", { callbackUrl: redirectTo })}
+                onClick={() => signIn("google", { redirectTo })}
                 disabled={isPending}
                 className="flex h-11 w-full items-center justify-center gap-3 rounded-2xl border border-white/15 bg-white text-sm font-semibold text-zinc-900 transition-colors hover:bg-white/90 disabled:opacity-60"
               >

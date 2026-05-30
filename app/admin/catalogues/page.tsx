@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, ImageIcon, Sparkles } from "lucide-react";
+import { AdminCatalogueCard } from "@/src/components/admin/admin-catalogue-card";
 import { AdminCatalogueForm } from "@/src/components/admin/admin-catalogue-form";
 import { auth } from "@/src/lib/auth";
 import { getCataloguesByOwner } from "@/src/lib/catalogues-store";
@@ -65,36 +66,7 @@ export default async function AdminCataloguesPage() {
             </h2>
             <ul className="grid gap-4 sm:grid-cols-2">
               {catalogues.map((catalogue) => (
-                <li
-                  key={catalogue.id}
-                  className="overflow-hidden rounded-3xl border border-white/10 bg-linear-to-br from-zinc-800/60 via-zinc-900/70 to-zinc-950/90"
-                >
-                  <div className="grid grid-cols-3 gap-1">
-                    {catalogue.photos.slice(0, 3).map((p) => (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        key={p.id}
-                        src={p.image}
-                        alt=""
-                        className="aspect-square w-full object-cover"
-                      />
-                    ))}
-                  </div>
-                  <div className="space-y-1 p-4">
-                    <p className="text-base font-semibold text-white">
-                      {catalogue.name}
-                    </p>
-                    {catalogue.description ? (
-                      <p className="text-xs text-white/55">
-                        {catalogue.description}
-                      </p>
-                    ) : null}
-                    <p className="text-xs text-white/45">
-                      {catalogue.photos.length} photo
-                      {catalogue.photos.length > 1 ? "s" : ""}
-                    </p>
-                  </div>
-                </li>
+                <AdminCatalogueCard key={catalogue.id} catalogue={catalogue} />
               ))}
             </ul>
           </section>

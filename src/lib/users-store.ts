@@ -6,16 +6,38 @@ export type Plan = "free" | "essential" | "pro" | "premium";
 
 export type PlanLimits = {
   servicesPerDay: number; // Infinity = illimité
+  servicesMax: number; // Infinity = illimité
+  servicePublishCooldownDays: number;
   cataloguesMax: number;
   marketplaceBoost: number; // poids dans le tri (plus haut = plus haut)
 };
 
 export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
-  free: { servicesPerDay: 1, cataloguesMax: 2, marketplaceBoost: 0 },
-  essential: { servicesPerDay: 3, cataloguesMax: 10, marketplaceBoost: 1 },
-  pro: { servicesPerDay: 6, cataloguesMax: 20, marketplaceBoost: 2 },
+  free: {
+    servicesPerDay: 1,
+    servicesMax: 7,
+    servicePublishCooldownDays: 2,
+    cataloguesMax: 2,
+    marketplaceBoost: 0,
+  },
+  essential: {
+    servicesPerDay: 3,
+    servicesMax: Number.POSITIVE_INFINITY,
+    servicePublishCooldownDays: 0,
+    cataloguesMax: 10,
+    marketplaceBoost: 1,
+  },
+  pro: {
+    servicesPerDay: 6,
+    servicesMax: Number.POSITIVE_INFINITY,
+    servicePublishCooldownDays: 0,
+    cataloguesMax: 20,
+    marketplaceBoost: 2,
+  },
   premium: {
     servicesPerDay: Number.POSITIVE_INFINITY,
+    servicesMax: Number.POSITIVE_INFINITY,
+    servicePublishCooldownDays: 0,
     cataloguesMax: Number.POSITIVE_INFINITY,
     marketplaceBoost: 3,
   },

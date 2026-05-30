@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { AuthFormCard } from "@/src/components/auth/auth-form-card";
+import { auth } from "@/src/lib/auth";
 
 export const metadata: Metadata = {
   title: "Connexion",
@@ -16,6 +18,11 @@ export default async function LoginPage({
   const { callbackUrl } = await searchParams;
   const safeCallback =
     callbackUrl && SAFE_REDIRECT_RE.test(callbackUrl) ? callbackUrl : null;
+  const session = await auth();
+
+  if (session?.user?.id) {
+    redirect(safeCallback ?? "/admin");
+  }
 
   return (
     <AuthFormCard

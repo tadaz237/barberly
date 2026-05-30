@@ -3,7 +3,9 @@ import { auth } from "@/src/lib/auth";
 import { uploadImageToCloudinary } from "@/src/lib/cloudinary";
 import {
   addService,
+  countServicesByOwner,
   countServicesPublishedToday,
+  getLatestServiceCreatedAt,
   getServices,
   getServicesByOwner,
 } from "@/src/lib/services-store";
@@ -32,6 +34,7 @@ function isNonEmptyString(value: unknown): value is string {
 const IMAGE_DATA_URL_RE =
   /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/;
 const MAX_IMAGE_DATA_URL_LENGTH = 3_000_000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -70,14 +73,46 @@ export async function POST(request: Request) {
   }
 
   const limits = await getUserLimits(session.user.id);
-  const todayCount = await countServicesPublishedToday(session.user.id);
-  if (todayCount >= limits.servicesPerDay) {
+  const servicesCount = await countServicesByOwner(session.user.id);
+  if (servicesCount >= limits.servicesMax) {
     return NextResponse.json(
       {
         message:
-          limits.servicesPerDay === 1
-            ? "Vous avez déjà publié votre prestation du jour. Passez à un forfait supérieur pour en publier plus."
-            : `Limite atteinte : ${limits.servicesPerDay} prestations par jour avec votre forfait actuel.`,
+          limits.servicesMax === 7
+            ? "Votre forfait gratuit autorise 7 prestations maximum. Vous pouvez modifier ou supprimer une prestation existante."
+            : `Limite atteinte : ${limits.servicesMax} prestations maximum avec votre forfait actuel.`,
+      },
+      { status: 429 },
+    );
+  }
+
+  if (limits.servicePublishCooldownDays > 0) {
+    const latestCreatedAt = await getLatestServiceCreatedAt(session.user.id);
+    if (latestCreatedAt) {
+      const nextAllowedAt = new Date(
+        latestCreatedAt.getTime() +
+          limits.servicePublishCooldownDays * DAY_MS,
+      );
+
+      if (Date.now() < nextAllowedAt.getTime()) {
+        return NextResponse.json(
+          {
+            message: `Le forfait Gratuit permet de publier une prestation tous les ${limits.servicePublishCooldownDays} jours. Prochaine publication possible le ${nextAllowedAt.toLocaleDateString("fr-FR")} à ${nextAllowedAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}. Vous pouvez modifier ou supprimer vos prestations existantes.`,
+          },
+          { status: 429 },
+        );
+      }
+    }
+  }
+
+  const todayCount = await countServicesPublishedToday(session.user.id);
+  if (
+    limits.servicePublishCooldownDays === 0 &&
+    todayCount >= limits.servicesPerDay
+  ) {
+    return NextResponse.json(
+      {
+        message: `Limite atteinte : ${limits.servicesPerDay} prestations par jour avec votre forfait actuel.`,
       },
       { status: 429 },
     );
