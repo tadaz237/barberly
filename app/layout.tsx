@@ -20,16 +20,12 @@ export const metadata: Metadata = {
     template: "%s | Barberly",
   },
   description:
-    "Barberly - la plateforme qui connecte les coiffeuses et coiffeurs a domicile avec leurs clientes.",
+    "Barberly - la plateforme qui connecte les coiffeuses et coiffeurs à domicile avec leurs clientes.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "Barberly",
-  },
-  icons: {
-    icon: "/icon",
-    apple: "/icon",
   },
 };
 

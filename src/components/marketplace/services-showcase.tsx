@@ -36,6 +36,27 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 ];
 
 const RADIUS_OPTIONS = [5, 10, 20, 50];
+const AUDIENCE_CATEGORY_KEYS = new Set([
+  "homme",
+  "femme",
+  "coiffure homme",
+  "coiffure femme",
+  "coupe homme",
+  "coupe femme",
+]);
+
+function normalizeFilterLabel(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+}
+
+function isAudienceCategory(category: string) {
+  return AUDIENCE_CATEGORY_KEYS.has(normalizeFilterLabel(category));
+}
 
 function hasServiceCoordinates(service: ServiceItem) {
   return (
@@ -112,7 +133,11 @@ export function ServicesShowcase() {
 
   const categories = useMemo(() => {
     const set = new Set<string>();
-    services.forEach((s) => set.add(s.category));
+    services.forEach((s) => {
+      if (!isAudienceCategory(s.category)) {
+        set.add(s.category);
+      }
+    });
     return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [services]);
 
@@ -519,21 +544,18 @@ function Filters({
         </div>
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex flex-wrap gap-2">
-            <CategoryChip
-              label="Toutes"
-              active={activeCategory === "all"}
-              onClick={() => onCategoryChange("all")}
-            />
-            {categories.map((c) => (
-              <CategoryChip
-                key={c}
-                label={c}
-                active={activeCategory === c}
-                onClick={() => onCategoryChange(c)}
-              />
-            ))}
-          </div>
+          {categories.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {categories.map((c) => (
+                <CategoryChip
+                  key={c}
+                  label={c}
+                  active={activeCategory === c}
+                  onClick={() => onCategoryChange(c)}
+                />
+              ))}
+            </div>
+          ) : null}
 
           <div className="relative shrink-0">
             <label htmlFor="marketplace-sort" className="sr-only">

@@ -152,7 +152,7 @@ export function AdminServicesPanel({ plan = "free" }: { plan?: Plan }) {
           <MetricCard
             label="Services publiés"
             value={services.length}
-            helper="Catalogue actuellement visible via l'API."
+            helper="Prestations visibles sur votre vitrine."
           />
           <MetricCard
             label="Mises en avant"
@@ -172,7 +172,7 @@ export function AdminServicesPanel({ plan = "free" }: { plan?: Plan }) {
           <div className="space-y-1">
             <CardTitle>Vos prestations</CardTitle>
             <CardDescription>
-              Les services que vous avez publiés. Ils apparaissent sur la marketplace
+              Les prestations que vous avez publiées. Elles apparaissent sur la marketplace
               avec leur photo et leur zone d&apos;intervention.
             </CardDescription>
           </div>
@@ -183,7 +183,7 @@ export function AdminServicesPanel({ plan = "free" }: { plan?: Plan }) {
             onClick={() => loadServices(true)}
             disabled={loading || refreshing}
           >
-            {refreshing ? "Actualisation..." : "Rafraîchir"}
+            {refreshing ? "Actualisation…" : "Rafraîchir"}
           </Button>
         </CardHeader>
 

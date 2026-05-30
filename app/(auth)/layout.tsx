@@ -6,18 +6,18 @@ import { ShieldCheck, Sparkles, Store } from "lucide-react";
 const features = [
   {
     Icon: ShieldCheck,
-    title: "Base propre",
-    description: "Routes App Router isolées dans un groupe (auth).",
+    title: "Confiance d'abord",
+    description: "Des profils vérifiés pour réserver et publier avec sérénité.",
   },
   {
     Icon: Store,
-    title: "Cohérence produit",
-    description: "Design aligné avec une plateforme beauté / coiffure.",
+    title: "La beauté se rapproche",
+    description: "Une vitrine claire pour trouver le bon talent près de chez soi.",
   },
   {
     Icon: Sparkles,
-    title: "Prête à brancher",
-    description: "Interface prête pour une Server Action ou un provider d'auth.",
+    title: "Chaque style compte",
+    description: "Des prestations soignées, visibles, et simples à réserver.",
   },
 ];
 
@@ -73,12 +73,11 @@ export default function AuthLayout({
               Espace authentification
             </span>
             <h1 className="max-w-lg text-3xl font-semibold tracking-tight text-white xl:text-4xl">
-              Un point d&apos;entrée clair pour les clientes et l&apos;admin.
+              Barberly rapproche les talents coiffure de celles et ceux qui les cherchent.
             </h1>
             <p className="max-w-xl text-sm leading-6 text-white/60 xl:text-base xl:leading-7">
-              Le projet est structuré autour d&apos;une marketplace et d&apos;un
-              espace admin. Cette zone auth prépare les routes dédiées à la
-              connexion et à l&apos;inscription.
+              Connectez-vous pour réserver, publier vos prestations ou gérer
+              votre activité dans un espace simple, fiable et pensé pour le quotidien.
             </p>
           </div>
 

@@ -80,7 +80,7 @@ export function PwaInstallButton({ className }: { className?: string }) {
   const mode = canPrompt ? "ready" : installEnvironment.mode;
 
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn("relative hidden sm:block", className)}>
       <button
         type="button"
         onClick={install}

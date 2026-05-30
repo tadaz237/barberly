@@ -5,7 +5,7 @@ import { auth } from "@/src/lib/auth";
 
 export const metadata: Metadata = {
   title: "Connexion",
-  description: "Accédez à votre espace client ou admin.",
+  description: "Accédez à votre espace Barberly.",
 };
 
 const SAFE_REDIRECT_RE = /^\/[a-zA-Z0-9_\-/?=&%.]*$/;
@@ -29,8 +29,8 @@ export default async function LoginPage({
       mode="login"
       redirectTo={safeCallback ?? "/admin"}
       badge="Connexion"
-      title="Bon retour."
-      description="Connectez-vous pour gérer vos services, retrouver vos demandes et accéder à votre espace."
+      title="Retrouvez votre espace Barberly."
+      description="Vos réservations, vos prestations et votre vitrine restent au même endroit : connectez-vous pour reprendre simplement."
       submitLabel="Se connecter"
       switchText="Pas encore de compte ?"
       switchLabel="Créer un compte"

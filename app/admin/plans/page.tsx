@@ -34,7 +34,7 @@ const PLANS: PlanCardData[] = [
     plan: "essential",
     name: "Essentiel",
     price: PLAN_PRICES.essential,
-    tagline: "Pour demarrer sereinement et publier plus chaque jour.",
+    tagline: "Pour démarrer sereinement et publier plus chaque jour.",
     Icon: Sparkles,
     highlight: false,
     perks: [
@@ -50,7 +50,7 @@ const PLANS: PlanCardData[] = [
     plan: "pro",
     name: "Pro",
     price: PLAN_PRICES.pro,
-    tagline: "Pour les coiffeurs actifs qui veulent gagner en visibilite.",
+    tagline: "Pour les coiffeurs actifs qui veulent gagner en visibilité.",
     Icon: TrendingUp,
     highlight: true,
     perks: [
@@ -67,12 +67,12 @@ const PLANS: PlanCardData[] = [
     plan: "premium",
     name: "Premium",
     price: PLAN_PRICES.premium,
-    tagline: "Pour les pros qui veulent etre en tete, sans aucune limite.",
+    tagline: "Pour les pros qui veulent être en tête, sans aucune limite.",
     Icon: Crown,
     highlight: false,
     perks: [
-      "Prestations illimitees",
-      "Catalogues illimites",
+      "Prestations illimitées",
+      "Catalogues illimités",
       "Top du classement marketplace",
       "Badge Premium dore",
       "Support dedie",
@@ -119,11 +119,11 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
             Forfaits Barberly
           </span>
           <h1 className="text-balance text-4xl font-semibold tracking-tight sm:text-5xl">
-            Boostez votre activite avec le forfait qui vous correspond.
+            Boostez votre activité avec le forfait qui vous correspond.
           </h1>
           <p className="text-sm leading-6 text-white/60 sm:text-base">
-            Publiez plus de prestations, creez plus de catalogues, et apparaissez
-            en haut du marketplace. Tarifs mensuels en francs CFA.
+            Publiez plus de prestations, créez plus de catalogues, et apparaissez
+            plus haut dans la marketplace. Tarifs mensuels en francs CFA.
           </p>
         </header>
 
@@ -202,8 +202,8 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
         <section className="rounded-3xl border border-white/10 bg-white/3 p-5 text-center text-xs text-white/45 sm:rounded-[2rem] sm:p-6">
           <p>
             <Camera className="mr-1 inline-block size-3.5 text-amber-300" />
-            Les souscriptions payantes sont isolées pour le moment. Les plans
-            restent visibles, mais leur activation sera bientôt disponible.
+            Les souscriptions payantes sont temporairement désactivées. Les plans
+            restent visibles, et leur activation sera bientôt disponible.
           </p>
         </section>
       </div>
@@ -216,7 +216,7 @@ function getPaymentNotice(payment: string | undefined) {
     return {
       className: "border-amber-400/30 bg-amber-400/10 text-amber-100",
       message:
-        "Paiement isolé pour le moment. Aucun forfait n'a été activé automatiquement.",
+        "Paiement enregistré, mais l'activation automatique est temporairement désactivée.",
     };
   }
 
@@ -238,7 +238,7 @@ function getPaymentNotice(payment: string | undefined) {
   if (payment === "failed" || payment === "error" || payment === "missing") {
     return {
       className: "border-red-400/30 bg-red-400/10 text-red-100",
-      message: "Verification du paiement impossible. Reessayez dans un instant.",
+      message: "Vérification du paiement impossible. Réessayez dans un instant.",
     };
   }
 

@@ -120,7 +120,7 @@ export default async function AdminPage() {
               className="inline-flex h-9 items-center gap-2 rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 text-xs font-semibold text-emerald-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-emerald-300/20"
             >
               <Store className="size-4" />
-              <span className="hidden sm:inline">Market-place</span>
+              <span className="hidden sm:inline">Marketplace</span>
             </Link>
             <Link
               href="/admin/reservations"
@@ -513,7 +513,7 @@ function PlanCard({
     : `${servicesCount} (illimité)`
   const publishRhythmDisplay =
     limits.servicePublishCooldownDays > 0
-      ? `1 tous les ${limits.servicePublishCooldownDays} jours`
+      ? `1 prestation tous les ${limits.servicePublishCooldownDays} jours`
       : Number.isFinite(limits.servicesPerDay)
         ? `${todayCount}/${limits.servicesPerDay} aujourd'hui`
         : "illimité"

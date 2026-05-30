@@ -76,7 +76,7 @@ export function readCinetPayConfig(): CinetPayConfig {
     customerCountry: (process.env.CINETPAY_CUSTOMER_COUNTRY || "CM").trim(),
     defaultCity: (process.env.CINETPAY_DEFAULT_CITY || "Douala").trim(),
     defaultZipCode: (process.env.CINETPAY_DEFAULT_ZIP_CODE || "00000").trim(),
-    defaultAddress: (process.env.CINETPAY_DEFAULT_ADDRESS || "Non renseigne").trim(),
+    defaultAddress: (process.env.CINETPAY_DEFAULT_ADDRESS || "Non renseigné").trim(),
   };
 }
 
@@ -136,7 +136,7 @@ export async function initializeCinetPayCheckout(
     | null;
 
   if (!response.ok || !raw) {
-    throw new Error("CinetPay n'a pas retourne une reponse valide.");
+    throw new Error("CinetPay n'a pas retourné une réponse valide.");
   }
 
   const data = raw.data as { payment_token?: unknown; payment_url?: unknown } | undefined;

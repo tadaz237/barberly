@@ -177,7 +177,7 @@ export function AdminServiceForm({
         const message =
           data && typeof data.message === "string"
             ? data.message
-            : "Impossible d'ajouter le service pour le moment."
+            : "Impossible d'ajouter la prestation pour le moment."
         throw new Error(message)
       }
 
@@ -186,7 +186,7 @@ export function AdminServiceForm({
       setSuccessMessage(
         data && typeof data.message === "string"
           ? data.message
-          : "Le service a été ajouté avec succès."
+          : "La prestation a été ajoutée avec succès."
       )
       await onServiceCreated()
     } catch (error) {
@@ -204,7 +204,7 @@ export function AdminServiceForm({
         <CardTitle>Publier une prestation</CardTitle>
         <CardDescription>
           Renseignez les informations essentielles : la photo, la coiffure, la zone
-          et le tarif. Vos clientes verront ce service immédiatement sur la
+          et le tarif. Vos clientes verront cette prestation immédiatement sur la
           marketplace.
         </CardDescription>
       </CardHeader>
@@ -360,8 +360,7 @@ export function AdminServiceForm({
                 "Gratuit : 7 prestations maximum, modification ou suppression possible."
               ) : (
                 <>
-                  Publication via{" "}
-                  <span className="font-medium">POST /api/services</span>.
+                  Votre prestation sera publiée sur la marketplace.
                 </>
               )}
             </p>
@@ -441,7 +440,7 @@ function ImagePicker({ imageDataUrl, onChoose, onClear, disabled }: ImagePickerP
             <p className="text-sm font-medium text-foreground">
               Ajouter une photo de la coiffure
             </p>
-            <p className="text-xs">PNG / JPEG / WEBP — max 2 Mo</p>
+            <p className="text-xs">PNG / JPEG / WEBP — max 5 Mo</p>
           </div>
         </button>
       )}
