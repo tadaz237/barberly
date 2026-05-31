@@ -316,7 +316,7 @@ export function ProfileForm({ user, toneKey }: Props) {
             </h2>
             <p className="max-w-2xl text-sm leading-6 text-white/60">
               Cette action retire le compte, les prestations, les reservations,
-              les catalogues, les codes de verification et les images Cloudinary
+              les catalogues, les codes de verification et toutes les donnees
               liees a ce profil.
             </p>
           </div>
