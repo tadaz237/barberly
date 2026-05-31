@@ -12,7 +12,7 @@ import {
 import { PlanSubscribeButton } from "@/src/components/admin/plan-subscribe-button";
 import { auth } from "@/src/lib/auth";
 import { PLAN_PRICES, type PaidPlan } from "@/src/lib/plans";
-import { getUserPlan, type Plan } from "@/src/lib/users-store";
+import { getUserById, getUserPlan, type Plan } from "@/src/lib/users-store";
 
 type PlanCardData = {
   plan: PaidPlan;
@@ -86,6 +86,10 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
   const session = await auth();
   if (!session?.user?.id) {
     redirect("/login?callbackUrl=/admin/plans");
+  }
+  const user = await getUserById(session.user.id);
+  if (user?.role === "client") {
+    redirect("/client");
   }
   const currentPlan: Plan = await getUserPlan(session.user.id);
   const query = searchParams ? await searchParams : {};

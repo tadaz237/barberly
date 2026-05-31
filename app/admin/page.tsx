@@ -7,6 +7,7 @@ import {
   Clock4,
   Crown,
   Images,
+  MessageCircle,
   ShieldAlert,
   ShieldCheck,
   ShieldEllipsis,
@@ -74,8 +75,12 @@ export default async function AdminPage() {
     name: session.user.name ?? "Utilisateur",
     email: session.user.email ?? "",
     image: undefined,
+    role: "professional" as const,
     kycStatus: "none" as KycStatus,
     plan,
+  }
+  if (user.role === "client") {
+    redirect("/client")
   }
   const status = user.kycStatus
   const toneKey = getAdminToneKey(user.gender ?? submission?.gender ?? null)
@@ -152,6 +157,13 @@ export default async function AdminPage() {
             >
               <Images className="size-4" />
               Catalogues
+            </Link>
+            <Link
+              href="/admin/messages"
+              className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 text-xs font-medium text-white/70 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white"
+            >
+              <MessageCircle className="size-4" />
+              <span className="hidden sm:inline">Messages</span>
             </Link>
             <Link
               href="/admin/profile"

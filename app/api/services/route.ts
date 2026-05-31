@@ -11,8 +11,10 @@ import {
 } from "@/src/lib/services-store";
 import {
   canPublishServices,
+  getUserById,
   getUserLimits,
   getUserPlan,
+  isProfessionalUser,
 } from "@/src/lib/users-store";
 import {
   MAX_SERVICE_DURATION_MINUTES,
@@ -63,6 +65,14 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { message: "Vous devez être connecté pour publier un service." },
       { status: 401 },
+    );
+  }
+
+  const user = await getUserById(session.user.id);
+  if (!isProfessionalUser(user)) {
+    return NextResponse.json(
+      { message: "Seuls les comptes professionnels peuvent publier un service." },
+      { status: 403 },
     );
   }
 

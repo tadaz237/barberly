@@ -8,6 +8,7 @@ type IncomingPayload = {
   email?: unknown;
   password?: unknown;
   image?: unknown;
+  role?: unknown;
 };
 
 function isNonEmptyString(value: unknown): value is string {
@@ -78,12 +79,14 @@ export async function POST(request: Request) {
   }
 
   const gender = await getGender();
+  const role = body.role === "client" ? "client" : "professional";
   const result = await registerUser({
     name: body.name,
     email: body.email,
     password: body.password,
     image,
-    gender: gender ?? undefined,
+    gender: role === "client" ? undefined : gender ?? undefined,
+    role,
   });
 
   if ("error" in result) {

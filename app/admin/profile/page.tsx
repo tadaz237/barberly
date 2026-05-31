@@ -25,6 +25,9 @@ export default async function ProfilePage() {
   if (!user) {
     redirect("/login");
   }
+  if (user.role === "client") {
+    redirect("/client");
+  }
 
   const toneKey = getAdminToneKey(user.gender ?? cookieGender ?? null);
   const tone = ADMIN_TONES[toneKey];

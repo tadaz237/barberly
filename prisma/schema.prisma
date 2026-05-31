@@ -50,6 +50,16 @@ enum VerificationCodePurpose {
   password_reset
 }
 
+enum UserRole {
+  client
+  professional
+}
+
+enum ReviewStatus {
+  published
+  hidden
+}
+
 model User {
   id            String       @id @default(cuid())
   name          String
@@ -60,6 +70,7 @@ model User {
   bio           String?
   gender        Gender?
   provider      AuthProvider @default(credentials)
+  role          UserRole     @default(professional)
   plan          Plan         @default(free)
   planExpiresAt DateTime?
   createdAt     DateTime     @default(now())
@@ -69,6 +80,12 @@ model User {
   catalogues Catalogue[]
   planPayments PlanPayment[]
   verificationCodes VerificationCode[]
+  clientReservations Reservation[] @relation("ClientReservations")
+  clientReviews Review[] @relation("ClientReviews")
+  providerReviews Review[] @relation("ProviderReviews")
+  clientConversations Conversation[] @relation("ClientConversations")
+  providerConversations Conversation[] @relation("ProviderConversations")
+  sentMessages Message[] @relation("SentMessages")
 
   @@map("users")
 }
@@ -160,6 +177,7 @@ model Service {
   createdAt    DateTime @default(now())
 
   reservations Reservation[]
+  reviews      Review[]
 
   @@index([ownerId])
   @@map("services")
@@ -170,7 +188,10 @@ model Reservation {
   serviceId     String
   service       Service           @relation(fields: [serviceId], references: [id], onDelete: Cascade)
   coiffeurId    String?
+  clientId      String?
+  client        User?             @relation("ClientReservations", fields: [clientId], references: [id], onDelete: SetNull)
   clientName    String
+  clientEmail   String?
   clientAddress String
   clientPhone   String
   scheduledAt   DateTime
@@ -179,9 +200,67 @@ model Reservation {
   notes         String?
   createdAt     DateTime          @default(now())
 
+  review        Review?
+  conversation  Conversation?
+
   @@index([coiffeurId])
+  @@index([clientId])
   @@index([scheduledAt])
   @@map("reservations")
+}
+
+model Review {
+  id            String       @id @default(cuid())
+  reservationId String       @unique
+  reservation   Reservation  @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  providerId    String
+  provider      User         @relation("ProviderReviews", fields: [providerId], references: [id], onDelete: Cascade)
+  clientId      String
+  client        User         @relation("ClientReviews", fields: [clientId], references: [id], onDelete: Cascade)
+  serviceId     String?
+  service       Service?     @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  rating        Int
+  comment       String?
+  status        ReviewStatus @default(published)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@unique([clientId, providerId])
+  @@index([providerId, status])
+  @@index([clientId])
+  @@map("reviews")
+}
+
+model Conversation {
+  id            String       @id @default(cuid())
+  reservationId String       @unique
+  reservation   Reservation  @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  providerId    String
+  provider      User         @relation("ProviderConversations", fields: [providerId], references: [id], onDelete: Cascade)
+  clientId      String
+  client        User         @relation("ClientConversations", fields: [clientId], references: [id], onDelete: Cascade)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  messages      Message[]
+
+  @@index([providerId, updatedAt])
+  @@index([clientId, updatedAt])
+  @@map("conversations")
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  body           String
+  createdAt      DateTime     @default(now())
+  readAt         DateTime?
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@map("messages")
 }
 
 model Catalogue {

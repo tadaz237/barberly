@@ -61,6 +61,8 @@ const ROLE_LABEL: Record<UserRole, string> = {
 export default async function Home() {
   const [currentRole, session] = await Promise.all([getUserRole(), auth()]);
   const isConnected = Boolean(session?.user?.id);
+  const sessionRole = (session?.user as { role?: string } | undefined)?.role;
+  const accountHref = sessionRole === "client" ? "/client" : "/admin";
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
       <div
@@ -90,7 +92,7 @@ export default async function Home() {
           </Link>
 
           <Link
-            href={isConnected ? "/admin" : "/login"}
+            href={isConnected ? accountHref : "/login"}
             className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-white/70 transition-colors hover:text-amber-200 sm:text-sm"
           >
             <span className="hidden sm:inline">

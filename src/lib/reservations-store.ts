@@ -15,18 +15,29 @@ export type ReservationItem = {
   serviceName: string;
   servicePrice: number;
   coiffeurId: string | null;
+  clientId: string | null;
   clientName: string;
+  clientEmail?: string;
   clientAddress: string;
   clientPhone: string;
   scheduledAt: string;
   durationMin: number;
   status: ReservationStatus;
   notes?: string;
+  review?: {
+    id: string;
+    rating: number;
+    comment?: string;
+    createdAt: string;
+  };
+  conversationId?: string;
   createdAt: string;
 };
 
 export type CreateReservationInput = {
   serviceId: string;
+  clientId: string;
+  clientEmail: string;
   scheduledAt: Date;
   clientName: string;
   clientAddress: string;
@@ -35,7 +46,16 @@ export type CreateReservationInput = {
 };
 
 function toItem(
-  reservation: Reservation & { service: { name: string; price: number } },
+  reservation: Reservation & {
+    service: { name: string; price: number };
+    review?: {
+      id: string;
+      rating: number;
+      comment: string | null;
+      createdAt: Date;
+    } | null;
+    conversation?: { id: string } | null;
+  },
 ): ReservationItem {
   return {
     id: reservation.id,
@@ -43,13 +63,24 @@ function toItem(
     serviceName: reservation.service.name,
     servicePrice: reservation.service.price,
     coiffeurId: reservation.coiffeurId,
+    clientId: reservation.clientId,
     clientName: reservation.clientName,
+    clientEmail: reservation.clientEmail ?? undefined,
     clientAddress: reservation.clientAddress,
     clientPhone: reservation.clientPhone,
     scheduledAt: reservation.scheduledAt.toISOString(),
     durationMin: reservation.durationMin,
     status: reservation.status,
     notes: reservation.notes ?? undefined,
+    review: reservation.review
+      ? {
+          id: reservation.review.id,
+          rating: reservation.review.rating,
+          comment: reservation.review.comment ?? undefined,
+          createdAt: reservation.review.createdAt.toISOString(),
+        }
+      : undefined,
+    conversationId: reservation.conversation?.id,
     createdAt: reservation.createdAt.toISOString(),
   };
 }
@@ -168,6 +199,8 @@ export async function createReservation(
     data: {
       serviceId: service.id,
       coiffeurId: service.ownerId,
+      clientId: input.clientId,
+      clientEmail: input.clientEmail.trim().toLowerCase(),
       clientName: input.clientName.trim(),
       clientAddress: input.clientAddress.trim(),
       clientPhone: input.clientPhone.trim(),
@@ -176,10 +209,39 @@ export async function createReservation(
       notes: input.notes?.trim() || null,
       status: "pending",
     },
-    include: { service: { select: { name: true, price: true } } },
+    include: {
+      service: { select: { name: true, price: true } },
+      review: {
+        select: { id: true, rating: true, comment: true, createdAt: true },
+      },
+      conversation: { select: { id: true } },
+    },
   });
 
-  return { reservation: toItem(reservation) };
+  if (service.ownerId) {
+    await prisma.conversation.upsert({
+      where: { reservationId: reservation.id },
+      create: {
+        reservationId: reservation.id,
+        providerId: service.ownerId,
+        clientId: input.clientId,
+      },
+      update: {},
+    });
+  }
+
+  const withConversation = await prisma.reservation.findUnique({
+    where: { id: reservation.id },
+    include: {
+      service: { select: { name: true, price: true } },
+      review: {
+        select: { id: true, rating: true, comment: true, createdAt: true },
+      },
+      conversation: { select: { id: true } },
+    },
+  });
+
+  return { reservation: toItem(withConversation ?? reservation) };
 }
 
 export async function getReservationsForCoiffeur(
@@ -188,7 +250,30 @@ export async function getReservationsForCoiffeur(
   const reservations = await prisma.reservation.findMany({
     where: { coiffeurId },
     orderBy: { scheduledAt: "asc" },
-    include: { service: { select: { name: true, price: true } } },
+    include: {
+      service: { select: { name: true, price: true } },
+      review: {
+        select: { id: true, rating: true, comment: true, createdAt: true },
+      },
+      conversation: { select: { id: true } },
+    },
+  });
+  return reservations.map(toItem);
+}
+
+export async function getReservationsForClient(
+  clientId: string,
+): Promise<ReservationItem[]> {
+  const reservations = await prisma.reservation.findMany({
+    where: { clientId },
+    orderBy: { scheduledAt: "desc" },
+    include: {
+      service: { select: { name: true, price: true } },
+      review: {
+        select: { id: true, rating: true, comment: true, createdAt: true },
+      },
+      conversation: { select: { id: true } },
+    },
   });
   return reservations.map(toItem);
 }
@@ -207,7 +292,13 @@ export async function updateReservationStatus(
   const updated = await prisma.reservation.update({
     where: { id: reservationId },
     data: { status },
-    include: { service: { select: { name: true, price: true } } },
+    include: {
+      service: { select: { name: true, price: true } },
+      review: {
+        select: { id: true, rating: true, comment: true, createdAt: true },
+      },
+      conversation: { select: { id: true } },
+    },
   });
   return toItem(updated);
 }

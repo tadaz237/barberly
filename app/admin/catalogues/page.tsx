@@ -5,12 +5,21 @@ import { AdminCatalogueCard } from "@/src/components/admin/admin-catalogue-card"
 import { AdminCatalogueForm } from "@/src/components/admin/admin-catalogue-form";
 import { auth } from "@/src/lib/auth";
 import { getCataloguesByOwner } from "@/src/lib/catalogues-store";
-import { getUserLimits, getUserPlan, PLAN_LABEL } from "@/src/lib/users-store";
+import {
+  getUserById,
+  getUserLimits,
+  getUserPlan,
+  PLAN_LABEL,
+} from "@/src/lib/users-store";
 
 export default async function AdminCataloguesPage() {
   const session = await auth();
   if (!session?.user?.id) {
     redirect("/login");
+  }
+  const user = await getUserById(session.user.id);
+  if (user?.role === "client") {
+    redirect("/client");
   }
 
   const [catalogues, limits, plan] = await Promise.all([

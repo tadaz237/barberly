@@ -25,6 +25,13 @@ import {
   type MarketplaceToneKey,
 } from "@/src/components/marketplace/marketplace-theme";
 import { getCataloguesByOwner } from "@/src/lib/catalogues-store";
+import { auth } from "@/src/lib/auth";
+import {
+  getProviderReviewSummary,
+  getProviderReviews,
+  type ReviewItem,
+  type ReviewSummary,
+} from "@/src/lib/reviews-store";
 import { getServiceById } from "@/src/lib/services-store";
 import { getUserById } from "@/src/lib/users-store";
 import { cn } from "@/src/lib/utils";
@@ -41,12 +48,19 @@ export default async function ServiceDetailPage({
     notFound();
   }
 
-  const [coiffeur, catalogues] = await Promise.all([
-    service.ownerId ? getUserById(service.ownerId) : Promise.resolve(null),
-    service.ownerId
-      ? getCataloguesByOwner(service.ownerId)
-      : Promise.resolve([]),
-  ]);
+  const session = await auth();
+  const [coiffeur, catalogues, currentUser, reviewSummary, reviews] =
+    await Promise.all([
+      service.ownerId ? getUserById(service.ownerId) : Promise.resolve(null),
+      service.ownerId
+        ? getCataloguesByOwner(service.ownerId)
+        : Promise.resolve([]),
+      session?.user?.id ? getUserById(session.user.id) : Promise.resolve(null),
+      service.ownerId
+        ? getProviderReviewSummary(service.ownerId)
+        : Promise.resolve({ average: 0, count: 0 }),
+      service.ownerId ? getProviderReviews(service.ownerId) : Promise.resolve([]),
+    ]);
   const toneKey = getMarketplaceToneKey(
     service.ownerGender ?? coiffeur?.gender,
     service.category,
@@ -163,6 +177,15 @@ export default async function ServiceDetailPage({
               serviceDurationMin={service.duration}
               ownerGender={service.ownerGender ?? coiffeur?.gender}
               serviceCategory={service.category}
+              client={
+                currentUser?.role === "client"
+                  ? {
+                      name: currentUser.name,
+                      email: currentUser.email,
+                      phone: currentUser.phone,
+                    }
+                  : null
+              }
             />
 
             <p className="text-center text-[11px] text-white/40">
@@ -171,7 +194,14 @@ export default async function ServiceDetailPage({
           </div>
         </article>
 
-        <CoiffeurCard coiffeur={coiffeur} tone={tone} toneKey={toneKey} />
+        <CoiffeurCard
+          coiffeur={coiffeur}
+          tone={tone}
+          toneKey={toneKey}
+          reviewSummary={reviewSummary}
+        />
+
+        <ReviewsSection reviews={reviews} tone={tone} />
 
         {catalogues.length > 0 ? (
           <section className="space-y-5">
@@ -291,10 +321,12 @@ function CoiffeurCard({
   coiffeur,
   tone,
   toneKey,
+  reviewSummary,
 }: {
   coiffeur: CoiffeurInfo;
   tone: MarketplaceTone;
   toneKey: MarketplaceToneKey;
+  reviewSummary: ReviewSummary;
 }) {
   const roleTitle = getMarketplaceRoleTitle(toneKey);
 
@@ -347,6 +379,7 @@ function CoiffeurCard({
               </h2>
               <CoiffeurPlanBadge plan={coiffeur.plan} />
             </div>
+            <RatingLine summary={reviewSummary} tone={tone} />
             {coiffeur.bio ? (
               <p className="text-sm leading-6 text-white/60">{coiffeur.bio}</p>
             ) : (
@@ -379,6 +412,87 @@ function CoiffeurCard({
             )}
           </div>
         </div>
+      </div>
+    </section>
+  );
+}
+
+function RatingLine({
+  summary,
+  tone,
+}: {
+  summary: ReviewSummary;
+  tone: MarketplaceTone;
+}) {
+  if (summary.count === 0) {
+    return (
+      <p className="text-xs text-white/40">
+        Aucun avis vérifié pour le moment.
+      </p>
+    );
+  }
+
+  return (
+    <p className="inline-flex items-center gap-2 text-sm text-white/70">
+      <span className={cn("inline-flex items-center gap-1", tone.text)}>
+        <Star className="size-4 fill-current" />
+        <strong>{summary.average.toFixed(1).replace(".", ",")}/5</strong>
+      </span>
+      <span>
+        {summary.count} avis vérifié{summary.count > 1 ? "s" : ""}
+      </span>
+    </p>
+  );
+}
+
+function ReviewsSection({
+  reviews,
+  tone,
+}: {
+  reviews: ReviewItem[];
+  tone: MarketplaceTone;
+}) {
+  if (reviews.length === 0) return null;
+
+  return (
+    <section className="space-y-4">
+      <div className="space-y-1">
+        <p
+          className={cn(
+            "text-[11px] font-semibold uppercase tracking-[0.22em]",
+            tone.text,
+          )}
+        >
+          Avis vérifiés
+        </p>
+        <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+          Retours de clients coiffés
+        </h2>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {reviews.map((review) => (
+          <article
+            key={review.id}
+            className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-semibold text-white">{review.clientName}</p>
+                <p className="text-xs text-white/45">{review.serviceName}</p>
+              </div>
+              <span className={cn("inline-flex items-center gap-1 text-sm font-semibold", tone.text)}>
+                <Star className="size-4 fill-current" />
+                {review.rating}/5
+              </span>
+            </div>
+            {review.comment ? (
+              <p className="mt-3 text-sm leading-6 text-white/62">
+                {review.comment}
+              </p>
+            ) : null}
+          </article>
+        ))}
       </div>
     </section>
   );

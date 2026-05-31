@@ -17,6 +17,11 @@ type Props = {
   serviceDurationMin: number;
   ownerGender?: MarketplaceGender;
   serviceCategory?: string;
+  client?: {
+    name: string;
+    email: string;
+    phone?: string;
+  } | null;
 };
 
 export function ReservationCta({
@@ -26,6 +31,7 @@ export function ReservationCta({
   serviceDurationMin,
   ownerGender,
   serviceCategory,
+  client,
 }: Props) {
   const [open, setOpen] = useState(false);
   const tone = MARKETPLACE_TONES[
@@ -54,6 +60,7 @@ export function ReservationCta({
         serviceDurationMin={serviceDurationMin}
         ownerGender={ownerGender}
         serviceCategory={serviceCategory}
+        client={client}
       />
     </>
   );

@@ -2,6 +2,7 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { getGender } from "@/src/lib/gender";
+import { getUserRole } from "@/src/lib/user-role";
 import { upsertOAuthUser, verifyCredentials } from "@/src/lib/users-store";
 import { consumeVerificationCode } from "@/src/lib/verification-codes";
 
@@ -48,7 +49,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!codeOk) return null;
 
-        return { id: user.id, name: user.name, email: user.email };
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        };
       },
     }),
     Google({
@@ -60,24 +66,33 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async jwt({ token, user, account }) {
       if (user && account?.provider === "google" && user.email) {
-        const cookieGender = await getGender();
+        const [cookieGender, cookieRole] = await Promise.all([
+          getGender(),
+          getUserRole(),
+        ]);
+        const role = cookieRole === "client" ? "client" : "professional";
         const stored = await upsertOAuthUser({
           name: user.name ?? "Utilisateur",
           email: user.email,
           image: user.image ?? undefined,
           provider: "google",
-          gender: cookieGender ?? undefined,
+          gender: role === "client" ? undefined : cookieGender ?? undefined,
+          role,
         });
         token.id = stored.id;
         token.picture = stored.image ?? null;
+        token.role = stored.role;
       } else if (user) {
         token.id = user.id as string;
+        token.role = (user as { role?: string }).role ?? "professional";
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user && token.id) {
         (session.user as { id?: string }).id = token.id as string;
+        (session.user as { role?: string }).role =
+          (token.role as string | undefined) ?? "professional";
       }
       return session;
     },

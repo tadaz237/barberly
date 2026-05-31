@@ -3,6 +3,7 @@ import type { Kyc, User } from "@prisma/client";
 import { prisma } from "@/src/lib/prisma";
 
 export type Plan = "free" | "essential" | "pro" | "premium";
+export type AccountRole = "client" | "professional";
 
 export type PlanLimits = {
   servicesPerDay: number; // Infinity = illimité
@@ -149,6 +150,7 @@ export type OAuthUpsertInput = {
   image?: string;
   provider: "google";
   gender?: Gender;
+  role?: AccountRole;
 };
 
 export type PublicUser = {
@@ -159,6 +161,7 @@ export type PublicUser = {
   phone?: string;
   bio?: string;
   gender?: Gender;
+  role: AccountRole;
   kycStatus: KycStatus;
   plan: Plan;
   planExpiresAt?: string;
@@ -170,6 +173,7 @@ export type RegisterInput = {
   password: string;
   image?: string;
   gender?: Gender;
+  role?: AccountRole;
 };
 
 export type UpdateUserProfileInput = {
@@ -250,6 +254,7 @@ function toPublic(user: User & { kyc: Kyc | null }): PublicUser {
     phone: user.phone ?? undefined,
     bio: user.bio ?? undefined,
     gender: user.gender ?? undefined,
+    role: user.role,
     kycStatus: deriveKycStatus(user.kyc),
     plan: user.plan,
     planExpiresAt: user.planExpiresAt?.toISOString(),
@@ -365,7 +370,9 @@ export async function deleteUserAccount(userId: string): Promise<boolean> {
         OR: [{ userId }, { email: user.email }],
       },
     });
-    await tx.reservation.deleteMany({ where: { coiffeurId: userId } });
+    await tx.reservation.deleteMany({
+      where: { OR: [{ coiffeurId: userId }, { clientId: userId }] },
+    });
     await tx.service.deleteMany({ where: { ownerId: userId } });
     await tx.user.delete({ where: { id: userId } });
   });
@@ -531,6 +538,14 @@ export function isPlatformAdmin(email: string | null | undefined): boolean {
   return list.includes(email.toLowerCase());
 }
 
+export function isProfessionalUser(user: PublicUser | null | undefined) {
+  return user?.role === "professional";
+}
+
+export function isClientUser(user: PublicUser | null | undefined) {
+  return user?.role === "client";
+}
+
 export async function registerUser(
   input: RegisterInput,
 ): Promise<{ user: PublicUser } | { error: "email_taken" }> {
@@ -548,7 +563,8 @@ export async function registerUser(
       email,
       passwordHash,
       image: input.image,
-      gender: input.gender,
+      gender: input.role === "client" ? null : input.gender,
+      role: input.role ?? "professional",
       provider: "credentials",
     },
     include: { kyc: true },
@@ -612,9 +628,12 @@ export async function upsertOAuthUser(
   });
 
   if (existing) {
-    const patch: { image?: string; gender?: Gender } = {};
+    const patch: { image?: string; gender?: Gender; role?: AccountRole } = {};
     if (!existing.image && input.image) patch.image = input.image;
-    if (!existing.gender && input.gender) patch.gender = input.gender;
+    if (!existing.gender && input.gender && input.role !== "client") {
+      patch.gender = input.gender;
+    }
+    if (existing.role !== input.role && input.role) patch.role = input.role;
     if (Object.keys(patch).length > 0) {
       const updated = await prisma.user.update({
         where: { id: existing.id },
@@ -631,7 +650,8 @@ export async function upsertOAuthUser(
       name: input.name.trim() || "Utilisateur",
       email,
       image: input.image,
-      gender: input.gender,
+      gender: input.role === "client" ? null : input.gender,
+      role: input.role ?? "professional",
       provider: "google",
     },
     include: { kyc: true },

@@ -40,6 +40,9 @@ export default async function KycPage() {
     getKycStatus(session.user.id),
     getGender(),
   ]);
+  if (user?.role === "client") {
+    redirect("/client");
+  }
   const gender = user?.gender ?? submission?.gender ?? cookieGender ?? null;
   const toneKey = getAdminToneKey(gender);
   const tone = ADMIN_TONES[toneKey];

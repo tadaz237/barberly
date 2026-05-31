@@ -38,7 +38,7 @@ export default async function MarketplacePage() {
             <PwaInstallButton />
             {user ? (
               <Link
-                href="/admin"
+                href={user.role === "client" ? "/client" : "/admin"}
                 className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1 pr-3 pl-1 text-xs font-medium text-white/80 transition-colors hover:bg-white/10 sm:text-sm"
               >
                 <span className="flex size-7 items-center justify-center overflow-hidden rounded-full bg-white/10">
@@ -49,16 +49,18 @@ export default async function MarketplacePage() {
                     <UserRound className="size-3.5 text-white/60" />
                   )}
                 </span>
-                <span className="hidden truncate sm:block">{user.name}</span>
+                <span className="hidden truncate sm:block">
+                  {user.role === "client" ? "Espace client" : user.name}
+                </span>
                 <ChevronRight className="size-3.5 text-white/50" />
               </Link>
             ) : (
               <Link
-                href="/login"
-                className="inline-flex items-center gap-1 text-xs font-medium text-white/70 transition-colors hover:text-amber-200 sm:text-sm"
+                href="/client-login"
+                className="inline-flex items-center gap-1 text-xs font-medium text-white/70 transition-colors hover:text-pink-200 sm:text-sm"
               >
-                <span className="text-amber-300 underline-offset-4 hover:underline">
-                  Se connecter
+                <span className="text-pink-300 underline-offset-4 hover:underline">
+                  Espace client
                 </span>
                 <ChevronRight className="size-4" />
               </Link>

@@ -1,28 +1,38 @@
 import type { Metadata } from "next";
 import { AuthFormCard } from "@/src/components/auth/auth-form-card";
-import { getGender } from "@/src/lib/gender";
 
 export const metadata: Metadata = {
-  title: "Inscription",
-  description: "Créez un compte pour accéder à la plateforme.",
+  title: "Inscription client",
+  description: "Créez un compte client Barberly.",
 };
 
-export default async function RegisterPage() {
-  const gender = await getGender();
+const SAFE_REDIRECT_RE = /^\/[a-zA-Z0-9_\-/?=&%.]*$/;
+
+export default async function ClientRegisterPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ callbackUrl?: string }>;
+}) {
+  const { callbackUrl } = await searchParams;
+  const safeCallback =
+    callbackUrl && SAFE_REDIRECT_RE.test(callbackUrl) ? callbackUrl : "/client";
+  const loginRedirect = `/client-login?callbackUrl=${encodeURIComponent(
+    safeCallback,
+  )}`;
 
   return (
     <AuthFormCard
       mode="register"
-      accountRole="professional"
-      tone={gender}
-      redirectTo="/login"
-      badge="Inscription"
-      title="Créer un compte professionnel."
-      description="Inscrivez-vous pour publier vos prestations, gérer vos réservations et recevoir les messages de vos clients."
-      submitLabel="Créer mon compte pro"
-      switchText="Vous avez déjà un compte ?"
+      accountRole="client"
+      tone="female"
+      redirectTo={loginRedirect}
+      badge="Compte client"
+      title="Créer mon compte client."
+      description="Un compte client permet de réserver, discuter avec le professionnel et publier un avis vérifié après la prestation."
+      submitLabel="Créer mon compte client"
+      switchText="Vous avez déjà un compte client ?"
       switchLabel="Se connecter"
-      switchHref="/login"
+      switchHref={loginRedirect}
       fields={[
         {
           id: "name",

@@ -4,6 +4,8 @@ import {
   COIFFEUR_SPECIALTIES,
   COIFFEUSE_SPECIALTIES,
   getKycSubmission,
+  getUserById,
+  isProfessionalUser,
   setUserKyc,
   type Gender,
   type KycSpecialty,
@@ -21,6 +23,14 @@ export async function GET() {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ message: "Non authentifié." }, { status: 401 });
+  }
+
+  const user = await getUserById(session.user.id);
+  if (!isProfessionalUser(user)) {
+    return NextResponse.json(
+      { message: "Le KYC est réservé aux comptes professionnels." },
+      { status: 403 },
+    );
   }
 
   const kyc = await getKycSubmission(session.user.id);
@@ -45,6 +55,14 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { message: "Vous devez être connecté pour soumettre votre KYC." },
       { status: 401 },
+    );
+  }
+
+  const user = await getUserById(session.user.id);
+  if (!isProfessionalUser(user)) {
+    return NextResponse.json(
+      { message: "Le KYC est réservé aux comptes professionnels." },
+      { status: 403 },
     );
   }
 

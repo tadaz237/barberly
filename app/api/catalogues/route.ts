@@ -6,7 +6,11 @@ import {
   countCataloguesByOwner,
   getCataloguesByOwner,
 } from "@/src/lib/catalogues-store";
-import { getUserLimits } from "@/src/lib/users-store";
+import {
+  getUserById,
+  getUserLimits,
+  isProfessionalUser,
+} from "@/src/lib/users-store";
 
 type IncomingPhoto = {
   image?: unknown;
@@ -69,6 +73,14 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { message: "Vous devez être connecté pour créer un catalogue." },
       { status: 401 },
+    );
+  }
+
+  const user = await getUserById(session.user.id);
+  if (!isProfessionalUser(user)) {
+    return NextResponse.json(
+      { message: "Seuls les comptes professionnels peuvent créer un catalogue." },
+      { status: 403 },
     );
   }
 

@@ -123,6 +123,7 @@ type AuthField = {
 
 type AuthFormCardProps = {
   mode: "login" | "register";
+  accountRole?: "client" | "professional";
   badge: string;
   title: string;
   description: string;
@@ -142,6 +143,7 @@ type SubmitStatus =
 
 export function AuthFormCard({
   mode,
+  accountRole = "professional",
   badge,
   title,
   description,
@@ -279,7 +281,13 @@ export function AuthFormCard({
           const res = await fetch("/api/auth/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, email, password, image: avatarDataUrl ?? undefined }),
+            body: JSON.stringify({
+              name,
+              email,
+              password,
+              image: avatarDataUrl ?? undefined,
+              role: accountRole,
+            }),
           });
 
           if (!res.ok) {

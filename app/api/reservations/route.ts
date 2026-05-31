@@ -3,7 +3,9 @@ import { auth } from "@/src/lib/auth";
 import {
   createReservation,
   getReservationsForCoiffeur,
+  getReservationsForClient,
 } from "@/src/lib/reservations-store";
+import { getUserById, isClientUser } from "@/src/lib/users-store";
 
 const PHONE_RE = /^[+]?[\d\s().-]{6,20}$/;
 
@@ -29,8 +31,11 @@ export async function GET(request: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Non authentifié." }, { status: 401 });
     }
+    const user = await getUserById(session.user.id);
     return NextResponse.json({
-      reservations: await getReservationsForCoiffeur(session.user.id),
+      reservations: isClientUser(user)
+        ? await getReservationsForClient(session.user.id)
+        : await getReservationsForCoiffeur(session.user.id),
     });
   }
 
@@ -41,6 +46,25 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      { message: "Connectez-vous comme client pour réserver." },
+      { status: 401 },
+    );
+  }
+
+  const user = await getUserById(session.user.id);
+  if (!user || !isClientUser(user)) {
+    return NextResponse.json(
+      {
+        message:
+          "Les comptes professionnels ne peuvent pas créer une réservation client.",
+      },
+      { status: 403 },
+    );
+  }
+
   let body: IncomingPayload;
   try {
     body = (await request.json()) as IncomingPayload;
@@ -78,6 +102,8 @@ export async function POST(request: Request) {
 
   const result = await createReservation({
     serviceId: body.serviceId,
+    clientId: user.id,
+    clientEmail: user.email,
     scheduledAt: scheduled,
     clientName: body.clientName,
     clientAddress: body.clientAddress,

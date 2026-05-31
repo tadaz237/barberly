@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   Clock4,
   MapPin,
+  MessageCircle,
   Phone,
   ShieldX,
   Sparkles,
@@ -16,6 +17,7 @@ import {
   getReservationsForCoiffeur,
   type ReservationStatus,
 } from "@/src/lib/reservations-store";
+import { getUserById } from "@/src/lib/users-store";
 
 const STATUS_LABEL: Record<ReservationStatus, string> = {
   pending: "En attente",
@@ -38,6 +40,10 @@ export default async function AdminReservationsPage() {
   const session = await auth();
   if (!session?.user?.id) {
     redirect("/login?callbackUrl=/admin/reservations");
+  }
+  const user = await getUserById(session.user.id);
+  if (user?.role === "client") {
+    redirect("/client");
   }
 
   const reservations = await getReservationsForCoiffeur(session.user.id);
@@ -192,6 +198,15 @@ export default async function AdminReservationsPage() {
         ) : null}
 
         <div className="mt-4">
+          {reservation.conversationId ? (
+            <Link
+              href="/admin/messages"
+              className="mb-3 inline-flex items-center gap-1.5 rounded-xl border border-pink-400/25 bg-pink-400/10 px-3 py-1.5 text-xs font-semibold text-pink-100 transition-colors hover:bg-pink-400/20"
+            >
+              <MessageCircle className="size-3.5" />
+              Ouvrir le chat
+            </Link>
+          ) : null}
           <ReservationStatusActions
             reservationId={reservation.id}
             currentStatus={reservation.status}

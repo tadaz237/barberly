@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   useEffect,
   useMemo,
@@ -41,6 +42,11 @@ type Props = {
   serviceDurationMin: number;
   ownerGender?: MarketplaceGender;
   serviceCategory?: string;
+  client?: {
+    name: string;
+    email: string;
+    phone?: string;
+  } | null;
 };
 
 function subscribeToClientMounted() {
@@ -56,6 +62,7 @@ export function ReservationModal({
   serviceDurationMin,
   ownerGender,
   serviceCategory,
+  client,
 }: Props) {
   const mounted = useSyncExternalStore(
     subscribeToClientMounted,
@@ -69,9 +76,9 @@ export function ReservationModal({
   const [slots, setSlots] = useState<string[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [form, setForm] = useState({
-    clientName: "",
+    clientName: client?.name ?? "",
     clientAddress: "",
-    clientPhone: "",
+    clientPhone: client?.phone ?? "",
     notes: "",
   });
   const [error, setError] = useState<string | null>(null);
@@ -81,6 +88,8 @@ export function ReservationModal({
   const tone = MARKETPLACE_TONES[toneKey];
   const roleLabel = getMarketplaceRoleLabel(toneKey);
   const inputClassName = cn(inputBaseClass, tone.focus);
+  const callbackUrl = `/marketplace/${serviceId}`;
+  const encodedCallbackUrl = encodeURIComponent(callbackUrl);
 
   useEffect(() => {
     if (!open) return;
@@ -162,7 +171,12 @@ export function ReservationModal({
     setSelectedDate(null);
     setSelectedSlot(null);
     setSlots([]);
-    setForm({ clientName: "", clientAddress: "", clientPhone: "", notes: "" });
+    setForm({
+      clientName: client?.name ?? "",
+      clientAddress: "",
+      clientPhone: client?.phone ?? "",
+      notes: "",
+    });
     setError(null);
     setSuccess(null);
     onClose();
@@ -208,10 +222,47 @@ export function ReservationModal({
           </button>
         </header>
 
-        <Stepper step={step} tone={tone} />
+        {client ? <Stepper step={step} tone={tone} /> : null}
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-7">
-          {step === "date" ? (
+          {!client ? (
+            <div className="space-y-4 text-center">
+              <div className={cn("mx-auto inline-flex size-14 items-center justify-center rounded-2xl border", tone.softPanel)}>
+                <UserRound className={cn("size-7", tone.icon)} />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-semibold text-white">
+                  Connectez-vous comme client.
+                </h3>
+                <p className="mx-auto max-w-md text-sm leading-6 text-white/60">
+                  Un compte client est nécessaire pour réserver, discuter avec le
+                  professionnel et laisser un avis vérifié après la prestation.
+                </p>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Link
+                  href={`/client-login?callbackUrl=${encodedCallbackUrl}`}
+                  className={cn(
+                    "inline-flex h-11 items-center justify-center rounded-2xl text-sm font-semibold",
+                    tone.solidButton,
+                  )}
+                >
+                  Me connecter
+                </Link>
+                <Link
+                  href={`/client-register?callbackUrl=${encodedCallbackUrl}`}
+                  className={cn(
+                    "inline-flex h-11 items-center justify-center rounded-2xl border text-sm font-semibold",
+                    tone.softButton,
+                  )}
+                >
+                  Créer un compte client
+                </Link>
+              </div>
+            </div>
+          ) : null}
+
+          {client && step === "date" ? (
             <DateStep
               monthCursor={monthCursor}
               setMonthCursor={setMonthCursor}
@@ -228,7 +279,7 @@ export function ReservationModal({
             />
           ) : null}
 
-          {step === "slot" ? (
+          {client && step === "slot" ? (
             <SlotStep
               date={selectedDate!}
               slots={slots}
@@ -241,7 +292,7 @@ export function ReservationModal({
             />
           ) : null}
 
-          {step === "form" ? (
+          {client && step === "form" ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               <button
                 type="button"
@@ -356,7 +407,7 @@ export function ReservationModal({
             </form>
           ) : null}
 
-          {step === "done" ? (
+          {client && step === "done" ? (
             <div className="space-y-4 text-center">
               <div className="mx-auto inline-flex size-14 items-center justify-center rounded-2xl bg-emerald-500/15 ring-1 ring-emerald-500/40">
                 <CheckCircle2 className="size-7 text-emerald-300" />
