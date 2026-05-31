@@ -5,6 +5,7 @@ import { verifyCredentials } from "@/src/lib/users-store";
 import {
   invalidateVerificationCodes,
   issueVerificationCode,
+  VerificationCodeRateLimitError,
 } from "@/src/lib/verification-codes";
 
 type IncomingPayload = {
@@ -14,6 +15,8 @@ type IncomingPayload = {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TWO_FACTOR_TTL_MINUTES = 10;
+
+export const runtime = "nodejs";
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -56,12 +59,29 @@ export async function POST(request: Request) {
     );
   }
 
-  const { code } = await issueVerificationCode({
-    email: user.email,
-    userId: user.id,
-    purpose: "two_factor",
-    ttlMinutes: TWO_FACTOR_TTL_MINUTES,
-  });
+  let code: string;
+  try {
+    ({ code } = await issueVerificationCode({
+      email: user.email,
+      userId: user.id,
+      purpose: "two_factor",
+      ttlMinutes: TWO_FACTOR_TTL_MINUTES,
+    }));
+  } catch (error) {
+    if (error instanceof VerificationCodeRateLimitError) {
+      return NextResponse.json(
+        {
+          message: `Trop de demandes. Attendez ${error.retryAfterSeconds}s avant de demander un nouveau code.`,
+        },
+        { status: 429 },
+      );
+    }
+
+    return NextResponse.json(
+      { message: "Impossible de preparer le code pour le moment." },
+      { status: 500 },
+    );
+  }
 
   try {
     await sendTwoFactorCodeEmail(user.email, code);

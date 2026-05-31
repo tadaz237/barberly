@@ -77,6 +77,42 @@ export function PasswordResetForm() {
     });
   }
 
+  function handleResendPasswordResetCode() {
+    setStatus({ state: "idle" });
+
+    startTransition(async () => {
+      try {
+        const response = await fetch("/api/auth/password-reset/request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        const payload = (await response.json().catch(() => null)) as
+          | { message?: string }
+          | null;
+
+        if (!response.ok) {
+          setStatus({
+            state: "error",
+            message: payload?.message ?? "Renvoi impossible.",
+          });
+          return;
+        }
+
+        setCode("");
+        setStatus({
+          state: "success",
+          message: payload?.message ?? "Nouveau code envoye par e-mail.",
+        });
+      } catch {
+        setStatus({
+          state: "error",
+          message: "Erreur reseau. Reessayez dans un instant.",
+        });
+      }
+    });
+  }
+
   function confirmReset(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -236,20 +272,30 @@ export function PasswordResetForm() {
           </Button>
 
           {phase === "confirm" ? (
-            <button
-              type="button"
-              onClick={() => {
-                setPhase("request");
-                setCode("");
-                setPassword("");
-                setConfirmPassword("");
-                setStatus({ state: "idle" });
-              }}
-              disabled={isPending}
-              className="text-sm font-semibold text-amber-200 underline-offset-4 transition-colors hover:text-amber-100 hover:underline disabled:opacity-60"
-            >
-              Utiliser une autre adresse e-mail
-            </button>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <button
+                type="button"
+                onClick={handleResendPasswordResetCode}
+                disabled={isPending}
+                className="text-left text-sm font-semibold text-amber-200 underline-offset-4 transition-colors hover:text-amber-100 hover:underline disabled:opacity-60"
+              >
+                Renvoyer le code
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setPhase("request");
+                  setCode("");
+                  setPassword("");
+                  setConfirmPassword("");
+                  setStatus({ state: "idle" });
+                }}
+                disabled={isPending}
+                className="text-left text-sm font-semibold text-white/60 underline-offset-4 transition-colors hover:text-amber-100 hover:underline disabled:opacity-60 sm:text-right"
+              >
+                Utiliser une autre adresse e-mail
+              </button>
+            </div>
           ) : null}
 
           {status.state === "error" ? (

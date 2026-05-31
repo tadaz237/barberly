@@ -6,6 +6,17 @@ export type VerificationCodePurpose = "two_factor" | "password_reset";
 const CODE_DIGITS = 6;
 const MAX_ATTEMPTS = 5;
 const EXPIRED_CODE_RETENTION_DAYS = 2;
+const DEFAULT_CODE_REQUEST_COOLDOWN_SECONDS = 60;
+
+export class VerificationCodeRateLimitError extends Error {
+  retryAfterSeconds: number;
+
+  constructor(retryAfterSeconds: number) {
+    super("Verification code request is rate limited.");
+    this.name = "VerificationCodeRateLimitError";
+    this.retryAfterSeconds = retryAfterSeconds;
+  }
+}
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -30,19 +41,43 @@ export async function issueVerificationCode({
   userId,
   purpose,
   ttlMinutes,
+  minIntervalSeconds = DEFAULT_CODE_REQUEST_COOLDOWN_SECONDS,
 }: {
   email: string;
   userId?: string;
   purpose: VerificationCodePurpose;
   ttlMinutes: number;
+  minIntervalSeconds?: number;
 }) {
   const normalizedEmail = normalizeEmail(email);
   const now = new Date();
-  const code = createNumericCode();
-  const expiresAt = new Date(now.getTime() + ttlMinutes * 60_000);
   const retentionCutoff = new Date(
     now.getTime() - EXPIRED_CODE_RETENTION_DAYS * 24 * 60 * 60_000,
   );
+  const latestCode = await prisma.verificationCode.findFirst({
+    where: {
+      email: normalizedEmail,
+      purpose,
+      ...(userId ? { userId } : {}),
+    },
+    orderBy: { createdAt: "desc" },
+    select: { createdAt: true },
+  });
+
+  if (latestCode) {
+    const elapsedSeconds = Math.floor(
+      (now.getTime() - latestCode.createdAt.getTime()) / 1000,
+    );
+
+    if (elapsedSeconds < minIntervalSeconds) {
+      throw new VerificationCodeRateLimitError(
+        minIntervalSeconds - elapsedSeconds,
+      );
+    }
+  }
+
+  const code = createNumericCode();
+  const expiresAt = new Date(now.getTime() + ttlMinutes * 60_000);
 
   await prisma.$transaction([
     prisma.verificationCode.updateMany({

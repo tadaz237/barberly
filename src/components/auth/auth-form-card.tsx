@@ -135,6 +135,50 @@ export function AuthFormCard({
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
+  async function requestTwoFactorCode(email: string, password: string) {
+    try {
+      const response = await fetch("/api/auth/two-factor/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | { message?: string }
+        | null;
+
+      if (!response.ok) {
+        setStatus({
+          state: "error",
+          message: payload?.message ?? "Connexion impossible.",
+        });
+        return;
+      }
+
+      setTwoFactorChallenge({ email, password });
+      setTwoFactorCode("");
+      setStatus({
+        state: "success",
+        message: payload?.message ?? "Code envoye. Verifiez votre boite mail.",
+      });
+    } catch {
+      setStatus({
+        state: "error",
+        message: "Erreur reseau. Reessayez dans un instant.",
+      });
+    }
+  }
+
+  function handleResendTwoFactorCode() {
+    if (!twoFactorChallenge) return;
+    setStatus({ state: "idle" });
+    startTransition(async () => {
+      await requestTwoFactorCode(
+        twoFactorChallenge.email,
+        twoFactorChallenge.password,
+      );
+    });
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -361,18 +405,28 @@ export function AuthFormCard({
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setTwoFactorChallenge(null);
-                  setTwoFactorCode("");
-                  setStatus({ state: "idle" });
-                }}
-                disabled={isPending}
-                className="text-sm font-semibold text-amber-200 underline-offset-4 transition-colors hover:text-amber-100 hover:underline disabled:opacity-60"
-              >
-                Changer l'adresse e-mail
-              </button>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <button
+                  type="button"
+                  onClick={handleResendTwoFactorCode}
+                  disabled={isPending}
+                  className="text-left text-sm font-semibold text-amber-200 underline-offset-4 transition-colors hover:text-amber-100 hover:underline disabled:opacity-60"
+                >
+                  Renvoyer le code
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTwoFactorChallenge(null);
+                    setTwoFactorCode("");
+                    setStatus({ state: "idle" });
+                  }}
+                  disabled={isPending}
+                  className="text-left text-sm font-semibold text-white/60 underline-offset-4 transition-colors hover:text-amber-100 hover:underline disabled:opacity-60 sm:text-right"
+                >
+                  Changer l'adresse e-mail
+                </button>
+              </div>
             </div>
           ) : (
             <div className={mode === "register" ? "grid gap-3 sm:grid-cols-2" : "space-y-3"}>

@@ -18,6 +18,8 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const IMAGE_DATA_URL_RE = /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/;
 const MAX_IMAGE_DATA_URL_LENGTH = 2_000_000; // ~1.5 Mo en base64
 
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
   let body: IncomingPayload;
   try {

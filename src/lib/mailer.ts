@@ -8,17 +8,33 @@ export type TransactionalEmail = {
   html: string;
 };
 
+function readBooleanEnv(value: string | undefined, fallback = false) {
+  if (value === undefined) return fallback;
+  return ["1", "true", "yes", "on"].includes(value.trim().toLowerCase());
+}
+
 function readSmtpConfig() {
   const host = process.env.SMTP_HOST?.trim();
   const user = process.env.SMTP_USER?.trim();
   const pass = process.env.SMTP_PASSWORD;
   const from = process.env.SMTP_FROM?.trim() || user;
-  const secure = ["1", "true", "yes"].includes(
-    (process.env.SMTP_SECURE ?? "").toLowerCase(),
-  );
-  const port = Number(process.env.SMTP_PORT ?? (secure ? 465 : 587));
+  const rawPort = process.env.SMTP_PORT?.trim();
+  const rawSecure = process.env.SMTP_SECURE?.trim();
+  const port = Number(rawPort || (readBooleanEnv(rawSecure) ? 465 : 587));
+  const secure =
+    rawSecure === undefined ? port === 465 : readBooleanEnv(rawSecure);
+  const authDisabled = readBooleanEnv(process.env.SMTP_AUTH_DISABLED);
+  const hasCompleteAuth = Boolean(user && pass);
+  const hasPartialAuth = Boolean(user || pass) && !hasCompleteAuth;
 
-  if (!host || !from || !Number.isInteger(port) || port <= 0) {
+  if (
+    !host ||
+    !from ||
+    !Number.isInteger(port) ||
+    port <= 0 ||
+    hasPartialAuth ||
+    (!authDisabled && !hasCompleteAuth)
+  ) {
     return null;
   }
 
@@ -26,7 +42,9 @@ function readSmtpConfig() {
     host,
     port,
     secure,
-    auth: user && pass ? { user, pass } : undefined,
+    auth: hasCompleteAuth
+      ? { user: user as string, pass: pass as string }
+      : undefined,
     from,
   };
 }
@@ -47,6 +65,9 @@ export async function sendTransactionalEmail(email: TransactionalEmail) {
     port: config.port,
     secure: config.secure,
     auth: config.auth,
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 15_000,
   };
   const transporter = nodemailer.createTransport(transportOptions);
 

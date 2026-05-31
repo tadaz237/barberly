@@ -5,6 +5,7 @@ import { getCredentialsUserByEmail } from "@/src/lib/users-store";
 import {
   invalidateVerificationCodes,
   issueVerificationCode,
+  VerificationCodeRateLimitError,
 } from "@/src/lib/verification-codes";
 
 type IncomingPayload = {
@@ -13,6 +14,9 @@ type IncomingPayload = {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PASSWORD_RESET_TTL_MINUTES = 15;
+
+export const runtime = "nodejs";
+
 const GENERIC_RESPONSE = {
   message:
     "Si un compte existe avec cette adresse, un code de réinitialisation a été envoyé.",
@@ -49,12 +53,29 @@ export async function POST(request: Request) {
     return NextResponse.json(GENERIC_RESPONSE);
   }
 
-  const { code } = await issueVerificationCode({
-    email: user.email,
-    userId: user.id,
-    purpose: "password_reset",
-    ttlMinutes: PASSWORD_RESET_TTL_MINUTES,
-  });
+  let code: string;
+  try {
+    ({ code } = await issueVerificationCode({
+      email: user.email,
+      userId: user.id,
+      purpose: "password_reset",
+      ttlMinutes: PASSWORD_RESET_TTL_MINUTES,
+    }));
+  } catch (error) {
+    if (error instanceof VerificationCodeRateLimitError) {
+      return NextResponse.json(
+        {
+          message: `Trop de demandes. Attendez ${error.retryAfterSeconds}s avant de demander un nouveau code.`,
+        },
+        { status: 429 },
+      );
+    }
+
+    return NextResponse.json(
+      { message: "Impossible de preparer le code pour le moment." },
+      { status: 500 },
+    );
+  }
 
   try {
     await sendPasswordResetCodeEmail(user.email, code);
