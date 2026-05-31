@@ -7,6 +7,7 @@ import {
   Sparkles,
   Star,
 } from "lucide-react";
+import { SignOutButton } from "@/src/components/auth/sign-out-button";
 import { ReviewForm } from "@/src/components/client/review-form";
 import { auth } from "@/src/lib/auth";
 import { getReservationsForClient } from "@/src/lib/reservations-store";
@@ -76,6 +77,7 @@ export default async function ClientPage() {
               <MessageCircle className="size-4" />
               Messages
             </Link>
+            <SignOutButton />
           </div>
         </header>
 
