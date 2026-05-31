@@ -13,8 +13,14 @@ import {
   ShieldX,
   Sparkles,
   Store,
+  UserCog,
   UserRound,
 } from "lucide-react"
+import {
+  ADMIN_TONES,
+  getAdminToneKey,
+  type AdminToneKey,
+} from "@/src/components/admin/admin-theme"
 import { AdminServicesPanel } from "@/src/components/admin/admin-services-panel"
 import { SignOutButton } from "@/src/components/auth/sign-out-button"
 import { PwaInstallButton } from "@/src/components/pwa-install-button"
@@ -37,6 +43,7 @@ import {
   type KycSubmission,
   type Plan,
 } from "@/src/lib/users-store"
+import { cn } from "@/src/lib/utils"
 
 export default async function AdminPage() {
   const session = await auth()
@@ -71,6 +78,8 @@ export default async function AdminPage() {
     plan,
   }
   const status = user.kycStatus
+  const toneKey = getAdminToneKey(user.gender ?? submission?.gender ?? null)
+  const tone = ADMIN_TONES[toneKey]
   const canPublish =
     status === "submitted" || status === "verified" || status === "rejected"
   const platformAdmin = isPlatformAdmin(session.user.email)
@@ -83,13 +92,21 @@ export default async function AdminPage() {
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-linear-to-b from-amber-400/10 via-pink-500/5 to-transparent"
+        className={cn(
+          "pointer-events-none absolute inset-x-0 top-0 h-72 bg-linear-to-b",
+          tone.topGlow,
+        )}
       />
 
       <header className="sticky top-0 z-20 border-b border-white/10 bg-black/75 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-7xl flex-col items-stretch gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/15 bg-white/10 sm:size-10">
+            <div
+              className={cn(
+                "flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border sm:size-10",
+                tone.avatar,
+              )}
+            >
               {user.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -98,7 +115,7 @@ export default async function AdminPage() {
                   className="size-full object-cover"
                 />
               ) : (
-                <UserRound className="size-5 text-white/55" />
+                <UserRound className={cn("size-5", tone.avatarIcon)} />
               )}
             </div>
             <div className="min-w-0 leading-tight">
@@ -136,6 +153,16 @@ export default async function AdminPage() {
               <Images className="size-4" />
               Catalogues
             </Link>
+            <Link
+              href="/admin/profile"
+              className={cn(
+                "inline-flex h-9 items-center gap-2 rounded-full border px-3 text-xs font-semibold transition-all duration-200 hover:-translate-y-0.5",
+                tone.profileButton,
+              )}
+            >
+              <UserCog className="size-4" />
+              <span className="hidden sm:inline">Profil</span>
+            </Link>
             {platformAdmin ? (
               <Link
                 href="/platform/kyc"
@@ -152,11 +179,21 @@ export default async function AdminPage() {
       </header>
 
       <section className="relative mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:gap-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
-        <KycBanner status={status} submission={submission} />
+        <KycBanner status={status} submission={submission} toneKey={toneKey} />
 
-        <div className="grid gap-5 rounded-2xl border border-white/10 bg-white/5 p-5 shadow-[0_24px_80px_-50px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:gap-6 sm:p-6 lg:grid-cols-[minmax(0,1.1fr)_320px] lg:items-end">
+        <div
+          className={cn(
+            "grid gap-5 rounded-2xl border p-5 shadow-[0_24px_80px_-50px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:gap-6 sm:p-6 lg:grid-cols-[minmax(0,1.1fr)_320px] lg:items-end",
+            tone.heroCard,
+          )}
+        >
           <div className="space-y-4">
-            <span className="inline-flex w-fit rounded-full border border-white/10 bg-white/10 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-white/55 sm:text-xs sm:tracking-[0.2em]">
+            <span
+              className={cn(
+                "inline-flex w-fit rounded-full border px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] shadow-lg sm:text-xs sm:tracking-[0.2em]",
+                tone.eyebrow,
+              )}
+            >
               Espace pro
             </span>
 
@@ -178,10 +215,15 @@ export default async function AdminPage() {
             todayCount={todayCount}
             servicesCount={servicesCount}
             cataloguesCount={cataloguesCount}
+            toneKey={toneKey}
           />
         </div>
 
-        {canPublish ? <AdminServicesPanel plan={plan} /> : <KycGateCard status={status} />}
+        {canPublish ? (
+          <AdminServicesPanel plan={plan} />
+        ) : (
+          <KycGateCard status={status} toneKey={toneKey} />
+        )}
       </section>
     </main>
   )
@@ -229,13 +271,17 @@ function KycBadge({ status }: { status: KycStatus }) {
 function KycBanner({
   status,
   submission,
+  toneKey,
 }: {
   status: KycStatus
   submission: KycSubmission | null
+  toneKey: AdminToneKey
 }) {
+  const accentTone = toneKey === "female" ? "pink" : "amber"
+
   if (status === "none") {
     return (
-      <BannerShell tone="amber" Icon={ShieldAlert} eyebrow="Action requise">
+      <BannerShell tone={accentTone} Icon={ShieldAlert} eyebrow="Action requise">
         <h2 className="text-base font-semibold sm:text-lg">
           Soumettez votre vérification pour pouvoir publier vos services.
         </h2>
@@ -243,7 +289,7 @@ function KycBanner({
           Quelques minutes suffisent. Dès que vous l&apos;envoyez, vous pouvez
           publier vos prestations pendant que notre équipe vérifie votre dossier.
         </p>
-        <BannerCta href="/admin/kyc" label="Commencer le KYC" tone="amber" />
+        <BannerCta href="/admin/kyc" label="Commencer le KYC" tone={accentTone} />
       </BannerShell>
     )
   }
@@ -274,13 +320,23 @@ function KycBanner({
   }
 
   if (status === "rejected" && submission) {
+    const quoteClass =
+      toneKey === "female"
+        ? "border-pink-500/30 bg-pink-500/5 text-pink-900 dark:text-pink-200"
+        : "border-amber-500/30 bg-amber-500/5 text-amber-900 dark:text-amber-200"
+
     return (
-      <BannerShell tone="amber" Icon={ShieldAlert} eyebrow="Document à fournir">
+      <BannerShell tone={accentTone} Icon={ShieldAlert} eyebrow="Document à fournir">
         <h2 className="text-base font-semibold sm:text-lg">
           Notre équipe a besoin d&apos;un complément pour valider votre profil.
         </h2>
         {submission.rejectionReason ? (
-          <blockquote className="rounded-2xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm leading-6 text-amber-900 dark:text-amber-200">
+          <blockquote
+            className={cn(
+              "rounded-2xl border px-4 py-3 text-sm leading-6",
+              quoteClass,
+            )}
+          >
             {submission.rejectionReason}
           </blockquote>
         ) : null}
@@ -293,7 +349,7 @@ function KycBanner({
         <BannerCta
           href="/admin/kyc"
           label="Mettre à jour mon KYC"
-          tone="amber"
+          tone={accentTone}
         />
       </BannerShell>
     )
@@ -322,7 +378,7 @@ function KycBanner({
   return null
 }
 
-type BannerTone = "amber" | "blue" | "emerald" | "red"
+type BannerTone = "amber" | "pink" | "blue" | "emerald" | "red"
 
 const TONE_CLASSES: Record<
   BannerTone,
@@ -333,6 +389,12 @@ const TONE_CLASSES: Record<
       "border-amber-400/30 bg-linear-to-br from-amber-400/10 via-amber-500/5 to-transparent",
     icon: "bg-amber-400/20 ring-amber-400/40 text-amber-700 dark:text-amber-300",
     eyebrow: "text-amber-700 dark:text-amber-300",
+  },
+  pink: {
+    container:
+      "border-pink-400/30 bg-linear-to-br from-pink-400/10 via-fuchsia-500/5 to-transparent",
+    icon: "bg-pink-400/20 ring-pink-400/40 text-pink-700 dark:text-pink-300",
+    eyebrow: "text-pink-700 dark:text-pink-300",
   },
   blue: {
     container:
@@ -400,6 +462,8 @@ function BannerCta({
   const cls =
     tone === "red"
       ? "bg-red-500 text-white hover:bg-red-400 shadow-lg shadow-red-500/20"
+      : tone === "pink"
+        ? "bg-pink-400 text-pink-950 hover:bg-pink-300 shadow-lg shadow-pink-500/20"
       : tone === "amber"
         ? "bg-amber-400 text-amber-950 hover:bg-amber-300 shadow-lg shadow-amber-500/20"
         : "bg-foreground text-background"
@@ -431,19 +495,27 @@ function DeadlineDate({ deadline }: { deadline: string }) {
   )
 }
 
-function KycGateCard({ status }: { status: KycStatus }) {
+function KycGateCard({
+  status,
+  toneKey,
+}: {
+  status: KycStatus
+  toneKey: AdminToneKey
+}) {
   const blocked = status === "blocked"
+  const tone = ADMIN_TONES[toneKey]
   return (
     <div className="rounded-2xl border border-dashed border-white/15 bg-white/[0.04] p-8 text-center shadow-[0_18px_60px_-42px_rgba(0,0,0,0.9)] backdrop-blur-xl sm:p-12">
       <div
-        className={`mx-auto inline-flex size-12 items-center justify-center rounded-xl ${
-          blocked ? "bg-red-500/15" : "bg-muted"
-        }`}
+        className={cn(
+          "mx-auto inline-flex size-12 items-center justify-center rounded-xl",
+          blocked ? "bg-red-500/15" : tone.softPanel,
+        )}
       >
         {blocked ? (
           <ShieldX className="size-6 text-red-500" />
         ) : (
-          <ShieldAlert className="size-6 text-muted-foreground" />
+          <ShieldAlert className={cn("size-6", tone.icon)} />
         )}
       </div>
       <h3 className="mt-4 text-lg font-semibold sm:text-xl">
@@ -458,11 +530,12 @@ function KycGateCard({ status }: { status: KycStatus }) {
       </p>
       <Link
         href="/admin/kyc"
-        className={`mt-5 inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold shadow-lg transition-colors ${
+        className={cn(
+          "mt-5 inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold shadow-lg transition-colors",
           blocked
             ? "bg-red-500 text-white shadow-red-500/30 hover:bg-red-400"
-            : "bg-amber-300 text-amber-950 shadow-amber-500/20 hover:bg-amber-200"
-        }`}
+            : tone.planButton,
+        )}
       >
         {blocked ? "Renvoyer mes documents" : "Compléter mon KYC"}
         <ArrowRight className="size-4" />
@@ -496,6 +569,7 @@ function PlanCard({
   todayCount,
   servicesCount,
   cataloguesCount,
+  toneKey,
 }: {
   plan: Plan
   limits: {
@@ -507,7 +581,9 @@ function PlanCard({
   todayCount: number
   servicesCount: number
   cataloguesCount: number
+  toneKey: AdminToneKey
 }) {
+  const tone = ADMIN_TONES[toneKey]
   const servicesLimitDisplay = Number.isFinite(limits.servicesMax)
     ? `${servicesCount}/${limits.servicesMax}`
     : `${servicesCount} (illimité)`
@@ -522,15 +598,20 @@ function PlanCard({
     : `${cataloguesCount} (illimité)`
 
   return (
-    <div className="grid gap-4 rounded-2xl border border-amber-300/25 bg-linear-to-br from-amber-300/15 via-white/5 to-white/[0.025] p-5 shadow-[0_18px_55px_-35px_rgba(251,191,36,0.75)]">
+    <div className={cn("grid gap-4 rounded-2xl border p-5", tone.planCard)}>
       <div className="flex items-center justify-between gap-2">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-amber-200">
+          <p
+            className={cn(
+              "text-[10px] font-semibold uppercase tracking-[0.22em]",
+              tone.planText,
+            )}
+          >
             Mon forfait
           </p>
           <p className="text-lg font-semibold text-white">{PLAN_LABEL[plan]}</p>
         </div>
-        <Crown className="size-6 text-amber-300" />
+        <Crown className={cn("size-6", tone.planIcon)} />
       </div>
 
       <ul className="space-y-1.5 text-sm">
@@ -551,14 +632,17 @@ function PlanCard({
       {plan !== "premium" ? (
         <Link
           href="/admin/plans"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-300 px-5 py-2.5 text-sm font-semibold text-amber-950 shadow-lg shadow-amber-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-amber-200"
+          className={cn(
+            "inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold shadow-lg transition-all duration-200 hover:-translate-y-0.5",
+            tone.planButton,
+          )}
         >
           <Sparkles className="size-4" />
           Passer à un plan supérieur
           <ArrowRight className="size-4" />
         </Link>
       ) : (
-        <p className="text-center text-xs text-amber-100">
+        <p className={cn("text-center text-xs", tone.planText)}>
           Vous êtes sur le forfait le plus complet 🎉
         </p>
       )}

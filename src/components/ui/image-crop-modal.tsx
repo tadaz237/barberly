@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import Cropper, { type Area } from "react-easy-crop";
 import { Check, RefreshCcw, X, ZoomIn } from "lucide-react";
+import { cn } from "@/src/lib/utils";
 
 const MAX_OUTPUT_DIM = 1400;
 
@@ -10,17 +11,34 @@ type Props = {
   src: string;
   aspect?: number;
   title?: string;
+  tone?: "amber" | "pink";
   onSave: (dataUrl: string) => void;
   onCancel: () => void;
 };
+
+const TONE_CLASSES = {
+  amber: {
+    text: "text-amber-200",
+    accent: "accent-amber-400",
+    button:
+      "bg-amber-400 text-amber-950 shadow-amber-500/30 hover:bg-amber-300",
+  },
+  pink: {
+    text: "text-pink-200",
+    accent: "accent-pink-400",
+    button: "bg-pink-400 text-pink-950 shadow-pink-500/30 hover:bg-pink-300",
+  },
+} as const;
 
 export function ImageCropModal({
   src,
   aspect = 4 / 3,
   title = "Recadrer l'image",
+  tone = "amber",
   onSave,
   onCancel,
 }: Props) {
+  const toneClasses = TONE_CLASSES[tone];
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -48,7 +66,12 @@ export function ImageCropModal({
       <div className="flex w-full max-w-2xl flex-col gap-4 rounded-3xl border border-white/10 bg-zinc-950 p-5 shadow-2xl sm:rounded-[2rem] sm:p-6">
         <header className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-200">
+            <p
+              className={cn(
+                "text-[11px] font-semibold uppercase tracking-[0.22em]",
+                toneClasses.text,
+              )}
+            >
               Édition de l&apos;image
             </p>
             <h2 className="text-lg font-semibold tracking-tight text-white">
@@ -92,7 +115,7 @@ export function ImageCropModal({
             value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}
             aria-label="Zoom"
-            className="flex-1 accent-amber-400"
+            className={cn("flex-1", toneClasses.accent)}
           />
           <button
             type="button"
@@ -120,7 +143,10 @@ export function ImageCropModal({
             type="button"
             onClick={handleSave}
             disabled={!croppedAreaPixels || busy}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-amber-400 px-5 text-sm font-semibold text-amber-950 shadow-lg shadow-amber-500/30 transition-colors hover:bg-amber-300 disabled:opacity-50"
+            className={cn(
+              "inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold shadow-lg transition-colors disabled:opacity-50",
+              toneClasses.button,
+            )}
           >
             <Check className="size-4" />
             Valider l&apos;image

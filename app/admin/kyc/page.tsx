@@ -8,9 +8,15 @@ import {
   ShieldCheck,
   ShieldX,
 } from "lucide-react";
+import {
+  ADMIN_TONES,
+  getAdminToneKey,
+  type AdminToneKey,
+} from "@/src/components/admin/admin-theme";
 import { KycForm } from "@/src/components/kyc/kyc-form";
 import { auth } from "@/src/lib/auth";
 import { getGender } from "@/src/lib/gender";
+import { cn } from "@/src/lib/utils";
 import {
   getKycStatus,
   getKycSubmission,
@@ -35,6 +41,9 @@ export default async function KycPage() {
     getGender(),
   ]);
   const gender = user?.gender ?? submission?.gender ?? cookieGender ?? null;
+  const toneKey = getAdminToneKey(gender);
+  const tone = ADMIN_TONES[toneKey];
+  const correctionTone = toneKey === "female" ? "pink" : "amber";
 
   const showForm =
     status === "none" || status === "rejected" || status === "blocked";
@@ -48,27 +57,33 @@ export default async function KycPage() {
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-40 left-1/2 size-[40rem] -translate-x-1/2 rounded-full bg-amber-400/10 blur-[120px]"
+        className={cn(
+          "pointer-events-none absolute -top-40 left-1/2 size-[40rem] -translate-x-1/2 rounded-full blur-[120px]",
+          tone.pageBlob,
+        )}
       />
 
       <div className="relative mx-auto w-full max-w-3xl space-y-8 px-4 py-6 sm:px-6 sm:py-10 lg:py-12">
         <header className="space-y-4">
           <Link
             href="/admin"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-white/60 transition-colors hover:text-amber-200 sm:text-sm"
+            className={cn(
+              "inline-flex items-center gap-1.5 text-xs font-medium text-white/60 transition-colors sm:text-sm",
+              tone.linkHover,
+            )}
           >
             <ArrowLeft className="size-4" />
             Retour au tableau de bord
           </Link>
 
-          <StatusHero status={status} />
+          <StatusHero status={status} toneKey={toneKey} />
         </header>
 
         {status === "rejected" && submission?.rejectionReason ? (
           <RejectionInfo
             reason={submission.rejectionReason}
             deadline={submission.rejectionDeadline}
-            tone="amber"
+            tone={correctionTone}
             now={requestTimestamp}
           />
         ) : null}
@@ -114,7 +129,15 @@ export default async function KycPage() {
   );
 }
 
-function StatusHero({ status }: { status: KycStatus }) {
+function StatusHero({
+  status,
+  toneKey,
+}: {
+  status: KycStatus;
+  toneKey: AdminToneKey;
+}) {
+  const tone = ADMIN_TONES[toneKey];
+
   if (status === "submitted") {
     return (
       <div className="space-y-3">
@@ -150,7 +173,12 @@ function StatusHero({ status }: { status: KycStatus }) {
   if (status === "rejected") {
     return (
       <div className="space-y-3">
-        <span className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.22em] text-amber-200">
+        <span
+          className={cn(
+            "inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.22em]",
+            tone.eyebrow,
+          )}
+        >
           <ShieldAlert className="size-3.5" />
           Document à fournir
         </span>
@@ -186,7 +214,12 @@ function StatusHero({ status }: { status: KycStatus }) {
 
   return (
     <div className="space-y-3">
-      <span className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.22em] text-amber-200">
+      <span
+        className={cn(
+          "inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.22em]",
+          tone.eyebrow,
+        )}
+      >
         <ShieldCheck className="size-3.5" />
         Vérification du profil
       </span>
@@ -209,12 +242,14 @@ function RejectionInfo({
 }: {
   reason: string;
   deadline?: string;
-  tone: "amber" | "red";
+  tone: "amber" | "pink" | "red";
   now: number;
 }) {
   const c =
     tone === "red"
       ? "border-red-400/30 bg-red-500/10 text-red-200"
+      : tone === "pink"
+        ? "border-pink-400/30 bg-pink-400/10 text-pink-100"
       : "border-amber-400/30 bg-amber-400/10 text-amber-100";
 
   return (

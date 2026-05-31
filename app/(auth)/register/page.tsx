@@ -1,15 +1,19 @@
 import type { Metadata } from "next";
 import { AuthFormCard } from "@/src/components/auth/auth-form-card";
+import { getGender } from "@/src/lib/gender";
 
 export const metadata: Metadata = {
   title: "Inscription",
   description: "Créez un compte pour accéder à la plateforme.",
 };
 
-export default function RegisterPage() {
+export default async function RegisterPage() {
+  const gender = await getGender();
+
   return (
     <AuthFormCard
       mode="register"
+      tone={gender}
       redirectTo="/login"
       badge="Inscription"
       title="Créer un compte."

@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ShieldCheck, Sparkles, Store } from "lucide-react";
+import { getGender } from "@/src/lib/gender";
+import { cn } from "@/src/lib/utils";
 
 const features = [
   {
@@ -21,11 +23,35 @@ const features = [
   },
 ];
 
-export default function AuthLayout({
+const AUTH_LAYOUT_TONES = {
+  male: {
+    badge: "border-white/15 bg-white/10 text-white/80",
+    cardHover:
+      "hover:border-amber-400/30 hover:shadow-[0_24px_60px_-12px_rgba(251,191,36,0.25),inset_0_1px_0_rgba(255,255,255,0.12)]",
+    glow: "bg-amber-400/15 group-hover/feature:bg-amber-400/30",
+    iconWrap:
+      "from-amber-400/25 via-amber-500/15 to-amber-600/5 ring-amber-400/30",
+    icon: "text-amber-200 drop-shadow-[0_0_8px_rgba(251,191,36,0.45)]",
+  },
+  female: {
+    badge: "border-pink-400/20 bg-pink-400/10 text-pink-100",
+    cardHover:
+      "hover:border-pink-400/30 hover:shadow-[0_24px_60px_-12px_rgba(244,114,182,0.24),inset_0_1px_0_rgba(255,255,255,0.12)]",
+    glow: "bg-pink-400/15 group-hover/feature:bg-pink-400/30",
+    iconWrap:
+      "from-pink-400/25 via-fuchsia-500/15 to-purple-600/5 ring-pink-400/30",
+    icon: "text-pink-200 drop-shadow-[0_0_8px_rgba(244,114,182,0.45)]",
+  },
+};
+
+export default async function AuthLayout({
   children,
 }: Readonly<{
   children: ReactNode;
 }>) {
+  const gender = await getGender();
+  const accent = AUTH_LAYOUT_TONES[gender ?? "male"];
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-black text-white">
       <div
@@ -68,7 +94,12 @@ export default function AuthLayout({
           </Link>
 
           <div className="hidden max-w-xl space-y-3 lg:block">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] text-white/80 backdrop-blur">
+            <span
+              className={cn(
+                "inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.28em] backdrop-blur",
+                accent.badge,
+              )}
+            >
               <Sparkles className="size-3.5" />
               Espace authentification
             </span>
@@ -85,19 +116,30 @@ export default function AuthLayout({
             {features.map(({ Icon, title, description }) => (
               <article
                 key={title}
-                className="group/feature relative overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-zinc-800/70 via-zinc-900/80 to-zinc-950/90 p-4 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl transition-all duration-500 ease-out will-change-transform hover:border-amber-400/30 hover:shadow-[0_24px_60px_-12px_rgba(251,191,36,0.25),inset_0_1px_0_rgba(255,255,255,0.12)] sm:p-5 lg:hover:transform-[translateY(-6px)_rotateX(5deg)_scale(1.02)]"
+                className={cn(
+                  "group/feature relative overflow-hidden rounded-2xl border border-white/10 bg-linear-to-br from-zinc-800/70 via-zinc-900/80 to-zinc-950/90 p-4 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl transition-all duration-500 ease-out will-change-transform sm:p-5 lg:hover:transform-[translateY(-6px)_rotateX(5deg)_scale(1.02)]",
+                  accent.cardHover,
+                )}
               >
                 <span
                   aria-hidden
-                  className="pointer-events-none absolute -top-12 -right-12 size-32 rounded-full bg-amber-400/15 blur-3xl transition-opacity duration-500 group-hover/feature:bg-amber-400/30"
+                  className={cn(
+                    "pointer-events-none absolute -top-12 -right-12 size-32 rounded-full blur-3xl transition-opacity duration-500",
+                    accent.glow,
+                  )}
                 />
                 <span
                   aria-hidden
                   className="pointer-events-none absolute inset-x-4 top-0 h-px bg-linear-to-r from-transparent via-white/30 to-transparent sm:inset-x-5"
                 />
 
-                <span className="relative mb-3 inline-flex size-9 items-center justify-center rounded-xl bg-linear-to-br from-amber-400/25 via-amber-500/15 to-amber-600/5 shadow-inner shadow-black/40 ring-1 ring-amber-400/30 sm:size-10 sm:rounded-2xl">
-                  <Icon className="size-4 text-amber-200 drop-shadow-[0_0_8px_rgba(251,191,36,0.45)] sm:size-5" />
+                <span
+                  className={cn(
+                    "relative mb-3 inline-flex size-9 items-center justify-center rounded-xl bg-linear-to-br shadow-inner shadow-black/40 ring-1 sm:size-10 sm:rounded-2xl",
+                    accent.iconWrap,
+                  )}
+                >
+                  <Icon className={cn("size-4 sm:size-5", accent.icon)} />
                 </span>
 
                 <h2 className="relative text-sm font-semibold tracking-tight text-white sm:text-base">

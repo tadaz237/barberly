@@ -172,6 +172,16 @@ export type RegisterInput = {
   gender?: Gender;
 };
 
+export type UpdateUserProfileInput = {
+  name: string;
+  image?: string | null;
+};
+
+export type AccountDeletionSnapshot = {
+  email: string;
+  imageUrls: string[];
+};
+
 export type SubmitKycInput = Omit<
   KycSubmission,
   | "postalCode"
@@ -282,6 +292,85 @@ export async function getUserById(id: string): Promise<PublicUser | undefined> {
     include: { kyc: true },
   });
   return user ? toPublic(user) : undefined;
+}
+
+export async function updateUserProfile(
+  userId: string,
+  input: UpdateUserProfileInput,
+): Promise<PublicUser | null> {
+  const updated = await prisma.user.updateMany({
+    where: { id: userId },
+    data: {
+      name: input.name.trim(),
+      ...(input.image !== undefined ? { image: input.image } : {}),
+    },
+  });
+
+  if (updated.count === 0) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { kyc: true },
+  });
+
+  return user ? toPublic(user) : null;
+}
+
+export async function getAccountDeletionSnapshot(
+  userId: string,
+): Promise<AccountDeletionSnapshot | null> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      email: true,
+      image: true,
+      kyc: { select: { idFront: true, idBack: true, selfie: true } },
+      services: { select: { image: true } },
+      catalogues: {
+        select: {
+          photos: { select: { image: true } },
+        },
+      },
+    },
+  });
+
+  if (!user) return null;
+
+  return {
+    email: user.email,
+    imageUrls: [
+      user.image,
+      user.kyc?.idFront,
+      user.kyc?.idBack,
+      user.kyc?.selfie,
+      ...user.services.map((service) => service.image),
+      ...user.catalogues.flatMap((catalogue) =>
+        catalogue.photos.map((photo) => photo.image),
+      ),
+    ].filter((imageUrl): imageUrl is string => Boolean(imageUrl)),
+  };
+}
+
+export async function deleteUserAccount(userId: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, email: true },
+  });
+
+  if (!user) return false;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.verificationCode.deleteMany({
+      where: {
+        OR: [{ userId }, { email: user.email }],
+      },
+    });
+    await tx.reservation.deleteMany({ where: { coiffeurId: userId } });
+    await tx.service.deleteMany({ where: { ownerId: userId } });
+    await tx.user.delete({ where: { id: userId } });
+  });
+
+  return true;
 }
 
 export async function getKycStatus(userId: string): Promise<KycStatus> {

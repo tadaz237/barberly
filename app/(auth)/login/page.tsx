@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AuthFormCard } from "@/src/components/auth/auth-form-card";
 import { auth } from "@/src/lib/auth";
+import { getGender } from "@/src/lib/gender";
 
 export const metadata: Metadata = {
   title: "Connexion",
@@ -18,7 +19,7 @@ export default async function LoginPage({
   const { callbackUrl } = await searchParams;
   const safeCallback =
     callbackUrl && SAFE_REDIRECT_RE.test(callbackUrl) ? callbackUrl : null;
-  const session = await auth();
+  const [session, gender] = await Promise.all([auth(), getGender()]);
 
   if (session?.user?.id) {
     redirect(safeCallback ?? "/admin");
@@ -27,6 +28,7 @@ export default async function LoginPage({
   return (
     <AuthFormCard
       mode="login"
+      tone={gender}
       redirectTo={safeCallback ?? "/admin"}
       badge="Connexion"
       title="Retrouvez votre espace Barberly."

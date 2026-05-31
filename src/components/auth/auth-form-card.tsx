@@ -30,13 +30,86 @@ import {
 } from "@/src/components/ui/card";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
+import { cn } from "@/src/lib/utils";
 
 export type AuthFieldIcon = "mail" | "lock" | "user";
+export type AuthTone = "male" | "female";
 
 const FIELD_ICONS: Record<AuthFieldIcon, LucideIcon> = {
   mail: Mail,
   lock: LockKeyhole,
   user: UserRound,
+};
+
+const AUTH_TONES: Record<
+  AuthTone,
+  {
+    cardBorder: string;
+    cardShadow: string;
+    badge: string;
+    avatarBorder: string;
+    avatarBg: string;
+    avatarIcon: string;
+    uploadButton: string;
+    iconHover: string;
+    iconFocus: string;
+    focus: string;
+    infoPanel: string;
+    infoText: string;
+    link: string;
+    linkMutedHover: string;
+    primary: string;
+    primaryShadow: string;
+    footer: string;
+    outline: string;
+  }
+> = {
+  male: {
+    cardBorder: "border-amber-400/20",
+    cardShadow: "shadow-amber-500/10",
+    badge: "bg-amber-400 text-zinc-950",
+    avatarBorder: "border-amber-400/30",
+    avatarBg: "from-amber-400/20 via-amber-500/10 to-amber-600/5",
+    avatarIcon: "text-amber-200/70",
+    uploadButton:
+      "border-amber-400/30 bg-amber-400/10 text-amber-200 hover:bg-amber-400/20",
+    iconHover: "hover:text-amber-200",
+    iconFocus:
+      "focus-visible:text-amber-200 focus-visible:ring-amber-400/40",
+    focus:
+      "focus-visible:border-amber-400/40 focus-visible:ring-amber-400/20",
+    infoPanel: "border-amber-400/25 bg-amber-400/10",
+    infoText: "text-amber-100",
+    link: "text-amber-200 hover:text-amber-100",
+    linkMutedHover: "hover:text-amber-100",
+    primary: "bg-amber-400 text-zinc-950 hover:bg-amber-300",
+    primaryShadow: "shadow-amber-500/20",
+    footer: "bg-amber-400/5",
+    outline:
+      "border-amber-400/30 text-amber-200 hover:bg-amber-400/10 hover:text-amber-100",
+  },
+  female: {
+    cardBorder: "border-pink-400/25",
+    cardShadow: "shadow-pink-500/10",
+    badge: "bg-pink-400 text-pink-950",
+    avatarBorder: "border-pink-400/35",
+    avatarBg: "from-pink-400/20 via-fuchsia-500/10 to-purple-600/5",
+    avatarIcon: "text-pink-200/75",
+    uploadButton:
+      "border-pink-400/35 bg-pink-400/10 text-pink-200 hover:bg-pink-400/20",
+    iconHover: "hover:text-pink-200",
+    iconFocus: "focus-visible:text-pink-200 focus-visible:ring-pink-400/40",
+    focus: "focus-visible:border-pink-400/40 focus-visible:ring-pink-400/20",
+    infoPanel: "border-pink-400/25 bg-pink-400/10",
+    infoText: "text-pink-100",
+    link: "text-pink-200 hover:text-pink-100",
+    linkMutedHover: "hover:text-pink-100",
+    primary: "bg-pink-400 text-pink-950 hover:bg-pink-300",
+    primaryShadow: "shadow-pink-500/20",
+    footer: "bg-pink-400/5",
+    outline:
+      "border-pink-400/30 text-pink-200 hover:bg-pink-400/10 hover:text-pink-100",
+  },
 };
 
 type AuthField = {
@@ -59,6 +132,7 @@ type AuthFormCardProps = {
   switchHref: string;
   fields: AuthField[];
   redirectTo?: string;
+  tone?: AuthTone | null;
 };
 
 type SubmitStatus =
@@ -77,7 +151,9 @@ export function AuthFormCard({
   switchHref,
   fields,
   redirectTo = "/",
+  tone = "male",
 }: AuthFormCardProps) {
+  const accent = AUTH_TONES[tone ?? "male"];
   const router = useRouter();
   const [status, setStatus] = useState<SubmitStatus>({ state: "idle" });
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
@@ -301,9 +377,20 @@ export function AuthFormCard({
   }
 
   return (
-    <Card className="w-full max-w-xl rounded-3xl border border-amber-400/20 bg-linear-to-b from-zinc-900/95 via-zinc-900/95 to-zinc-950/95 py-0 text-white shadow-2xl shadow-amber-500/10 ring-0 backdrop-blur sm:rounded-[2rem]">
+    <Card
+      className={cn(
+        "w-full max-w-xl rounded-3xl border bg-linear-to-b from-zinc-900/95 via-zinc-900/95 to-zinc-950/95 py-0 text-white shadow-2xl ring-0 backdrop-blur sm:rounded-[2rem]",
+        accent.cardBorder,
+        accent.cardShadow,
+      )}
+    >
       <CardHeader className="gap-2 border-b border-white/10 px-5 py-4 sm:px-8 sm:py-5">
-        <span className="inline-flex w-fit items-center rounded-full bg-amber-400 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-950 sm:text-[11px] sm:tracking-[0.24em]">
+        <span
+          className={cn(
+            "inline-flex w-fit items-center rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] sm:text-[11px] sm:tracking-[0.24em]",
+            accent.badge,
+          )}
+        >
           {badge}
         </span>
         <div className="space-y-1">
@@ -321,7 +408,13 @@ export function AuthFormCard({
           {mode === "register" ? (
             <div className="flex items-center gap-3">
               <div className="relative">
-                <div className="flex size-11 items-center justify-center overflow-hidden rounded-full border border-amber-400/30 bg-linear-to-br from-amber-400/20 via-amber-500/10 to-amber-600/5 shadow-inner shadow-black/40">
+                <div
+                  className={cn(
+                    "flex size-11 items-center justify-center overflow-hidden rounded-full border bg-linear-to-br shadow-inner shadow-black/40",
+                    accent.avatarBorder,
+                    accent.avatarBg,
+                  )}
+                >
                   {avatarDataUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -330,7 +423,7 @@ export function AuthFormCard({
                       className="size-full object-cover"
                     />
                   ) : (
-                    <UserRound className="size-5 text-amber-200/70" />
+                    <UserRound className={cn("size-5", accent.avatarIcon)} />
                   )}
                 </div>
                 {avatarDataUrl ? (
@@ -338,7 +431,10 @@ export function AuthFormCard({
                     type="button"
                     onClick={clearAvatar}
                     aria-label="Retirer la photo"
-                    className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-zinc-950 text-white/70 ring-1 ring-white/15 transition-colors hover:text-amber-200"
+                    className={cn(
+                      "absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-zinc-950 text-white/70 ring-1 ring-white/15 transition-colors",
+                      accent.iconHover,
+                    )}
                   >
                     <X className="size-3" />
                   </button>
@@ -349,7 +445,10 @@ export function AuthFormCard({
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isPending}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-xs font-semibold text-amber-200 transition-colors hover:bg-amber-400/20 disabled:opacity-60"
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-60",
+                  accent.uploadButton,
+                )}
               >
                 <Camera className="size-3.5" />
                 {avatarDataUrl ? "Changer la photo" : "Photo de profil"}
@@ -366,7 +465,13 @@ export function AuthFormCard({
 
           {twoFactorChallenge ? (
             <div className="space-y-4">
-              <div className="flex items-start gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/10 px-4 py-3 text-sm text-amber-100">
+              <div
+                className={cn(
+                  "flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm",
+                  accent.infoPanel,
+                  accent.infoText,
+                )}
+              >
                 <ShieldCheck className="mt-0.5 size-4 shrink-0" />
                 <p>
                   Un code de sécurité a été envoyé à{" "}
@@ -398,7 +503,10 @@ export function AuthFormCard({
                         event.target.value.replace(/\D/g, "").slice(0, 6),
                       )
                     }
-                    className="h-11 rounded-2xl border-white/10 bg-white/5 pl-10 text-sm text-white placeholder:text-white/40 shadow-inner shadow-black/20 focus-visible:border-amber-400/40 focus-visible:ring-amber-400/20"
+                    className={cn(
+                      "h-11 rounded-2xl border-white/10 bg-white/5 pl-10 text-sm text-white placeholder:text-white/40 shadow-inner shadow-black/20",
+                      accent.focus,
+                    )}
                     required
                     disabled={isPending}
                   />
@@ -410,7 +518,10 @@ export function AuthFormCard({
                   type="button"
                   onClick={handleResendTwoFactorCode}
                   disabled={isPending}
-                  className="text-left text-sm font-semibold text-amber-200 underline-offset-4 transition-colors hover:text-amber-100 hover:underline disabled:opacity-60"
+                  className={cn(
+                    "text-left text-sm font-semibold underline-offset-4 transition-colors hover:underline disabled:opacity-60",
+                    accent.link,
+                  )}
                 >
                   Renvoyer le code
                 </button>
@@ -422,9 +533,12 @@ export function AuthFormCard({
                     setStatus({ state: "idle" });
                   }}
                   disabled={isPending}
-                  className="text-left text-sm font-semibold text-white/60 underline-offset-4 transition-colors hover:text-amber-100 hover:underline disabled:opacity-60 sm:text-right"
+                  className={cn(
+                    "text-left text-sm font-semibold text-white/60 underline-offset-4 transition-colors hover:underline disabled:opacity-60 sm:text-right",
+                    accent.linkMutedHover,
+                  )}
                 >
-                  Changer l'adresse e-mail
+                  Changer l&apos;adresse e-mail
                 </button>
               </div>
             </div>
@@ -448,7 +562,11 @@ export function AuthFormCard({
                       type={effectiveType}
                       placeholder={placeholder}
                       autoComplete={autoComplete}
-                      className={`h-10 rounded-xl border-white/10 bg-white/5 pl-10 text-sm text-white placeholder:text-white/40 shadow-inner shadow-black/20 focus-visible:border-amber-400/40 focus-visible:ring-amber-400/20 sm:h-11 sm:rounded-2xl ${isPassword ? "pr-10" : ""}`}
+                      className={cn(
+                        "h-10 rounded-xl border-white/10 bg-white/5 pl-10 text-sm text-white placeholder:text-white/40 shadow-inner shadow-black/20 sm:h-11 sm:rounded-2xl",
+                        accent.focus,
+                        isPassword ? "pr-10" : "",
+                      )}
                       required
                       minLength={isPassword && mode === "register" ? 8 : undefined}
                       disabled={isPending}
@@ -464,7 +582,11 @@ export function AuthFormCard({
                         }
                         aria-label={isVisible ? "Masquer le mot de passe" : "Afficher le mot de passe"}
                         aria-pressed={isVisible}
-                        className="absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-white/40 transition-colors hover:text-amber-200 focus-visible:text-amber-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/40"
+                        className={cn(
+                          "absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-white/40 transition-colors focus-visible:outline-none focus-visible:ring-2",
+                          accent.iconHover,
+                          accent.iconFocus,
+                        )}
                       >
                         {isVisible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                       </button>
@@ -480,7 +602,10 @@ export function AuthFormCard({
             <div className="flex justify-end">
               <Link
                 href="/reset-password"
-                className="text-sm font-semibold text-amber-200 underline-offset-4 transition-colors hover:text-amber-100 hover:underline"
+                className={cn(
+                  "text-sm font-semibold underline-offset-4 transition-colors hover:underline",
+                  accent.link,
+                )}
               >
                 Mot de passe oublié ?
               </Link>
@@ -490,7 +615,11 @@ export function AuthFormCard({
           <Button
             type="submit"
             disabled={isPending}
-            className="h-11 w-full rounded-2xl bg-amber-400 text-sm font-semibold text-zinc-950 shadow-lg shadow-amber-500/20 hover:bg-amber-300 disabled:opacity-60"
+            className={cn(
+              "h-11 w-full rounded-2xl text-sm font-semibold shadow-lg disabled:opacity-60",
+              accent.primary,
+              accent.primaryShadow,
+            )}
           >
             {isPending ? (
               <>
@@ -547,12 +676,20 @@ export function AuthFormCard({
         </form>
       </CardContent>
 
-      <CardFooter className="flex-col items-start gap-3 border-t border-white/10 bg-amber-400/5 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+      <CardFooter
+        className={cn(
+          "flex-col items-start gap-3 border-t border-white/10 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8",
+          accent.footer,
+        )}
+      >
         <p className="text-sm text-white/60">{switchText}</p>
         <Button
           asChild
           variant="outline"
-          className="w-full rounded-2xl border-amber-400/30 bg-transparent text-amber-200 hover:bg-amber-400/10 hover:text-amber-100 sm:w-auto"
+          className={cn(
+            "w-full rounded-2xl bg-transparent sm:w-auto",
+            accent.outline,
+          )}
         >
           <Link href={switchHref}>{switchLabel}</Link>
         </Button>
