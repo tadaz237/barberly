@@ -89,10 +89,10 @@ export function QuickAccessButton({ className }: { className?: string }) {
 
   const platformHint =
     platform === "ios"
-      ? "iPhone: ouvrez Partager, puis Ajouter a l'ecran d'accueil."
+      ? "Sur cet appareil: ouvrez Partager, puis Ajouter a l'ecran d'accueil."
       : platform === "android"
-        ? "Android: ouvrez le menu du navigateur, puis Ajouter a l'ecran d'accueil."
-        : "Copiez ou partagez ce lien pour y revenir rapidement.";
+        ? "Sur cet appareil: ouvrez le menu du navigateur, puis Ajouter a l'ecran d'accueil."
+        : "Choisissez la ligne iOS ou Android selon le telephone.";
 
   return (
     <div className={cn("relative", className)}>
@@ -108,7 +108,7 @@ export function QuickAccessButton({ className }: { className?: string }) {
       </button>
 
       {open ? (
-        <div className="absolute right-0 top-[calc(100%+0.6rem)] z-40 w-[min(21rem,calc(100vw-2rem))] rounded-2xl border border-white/10 bg-zinc-950/95 p-3 text-xs leading-5 text-white/70 shadow-2xl shadow-black/40 backdrop-blur">
+        <div className="fixed inset-x-3 top-16 z-50 mx-auto max-w-sm rounded-2xl border border-white/10 bg-zinc-950/95 p-3 text-xs leading-5 text-white/70 shadow-2xl shadow-black/40 backdrop-blur sm:absolute sm:inset-x-auto sm:right-0 sm:top-[calc(100%+0.6rem)] sm:mx-0 sm:w-[min(21rem,calc(100vw-2rem))] sm:max-w-none">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="font-semibold text-white">
@@ -124,6 +124,37 @@ export function QuickAccessButton({ className }: { className?: string }) {
             >
               <X className="size-3.5" />
             </button>
+          </div>
+
+          <div className="mt-3 grid gap-2">
+            <div
+              className={cn(
+                "rounded-xl border px-3 py-2",
+                platform === "ios"
+                  ? "border-emerald-300/35 bg-emerald-300/10 text-emerald-100"
+                  : "border-white/10 bg-white/5 text-white/65",
+              )}
+            >
+              <p className="font-semibold text-white">iPhone / iPad</p>
+              <p className="mt-0.5">
+                Safari: bouton Partager, puis Ajouter a l&apos;ecran
+                d&apos;accueil.
+              </p>
+            </div>
+            <div
+              className={cn(
+                "rounded-xl border px-3 py-2",
+                platform === "android"
+                  ? "border-emerald-300/35 bg-emerald-300/10 text-emerald-100"
+                  : "border-white/10 bg-white/5 text-white/65",
+              )}
+            >
+              <p className="font-semibold text-white">Android</p>
+              <p className="mt-0.5">
+                Chrome: menu du navigateur, puis Ajouter a l&apos;ecran
+                d&apos;accueil.
+              </p>
+            </div>
           </div>
 
           <div className="mt-3 grid grid-cols-2 gap-2">

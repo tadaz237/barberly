@@ -9,3 +9,4 @@
 ✓ Ready in 1494ms
 Creating turbopack project { dir: 'G:\\jeux\\test2\\test2', testMode: true }
 
+ GET /marketplace 200 in 1431ms (next.js: 486ms, application-code: 944ms)
