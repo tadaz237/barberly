@@ -540,6 +540,19 @@ function ServiceEditDialog({
             </DialogDescription>
           </DialogHeader>
 
+          {stagingImage ? (
+            <ImageCropModal
+              src={stagingImage}
+              aspect={4 / 3}
+              title="Recadrer la photo de la prestation"
+              mode="inline"
+              onSave={(croppedUrl) => {
+                setImageDataUrl(croppedUrl)
+                setStagingImage(null)
+              }}
+              onCancel={() => setStagingImage(null)}
+            />
+          ) : (
           <form className="space-y-5" onSubmit={handleSubmit}>
             <ServiceImagePicker
               imageDataUrl={imageDataUrl}
@@ -685,21 +698,9 @@ function ServiceEditDialog({
               </Button>
             </div>
           </form>
+          )}
         </DialogContent>
       </Dialog>
-
-      {stagingImage ? (
-        <ImageCropModal
-          src={stagingImage}
-          aspect={4 / 3}
-          title="Recadrer la photo de la prestation"
-          onSave={(croppedUrl) => {
-            setImageDataUrl(croppedUrl)
-            setStagingImage(null)
-          }}
-          onCancel={() => setStagingImage(null)}
-        />
-      ) : null}
     </>
   )
 }

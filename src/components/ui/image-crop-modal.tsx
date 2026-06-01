@@ -12,6 +12,7 @@ type Props = {
   aspect?: number;
   title?: string;
   tone?: "amber" | "pink";
+  mode?: "modal" | "inline";
   onSave: (dataUrl: string) => void;
   onCancel: () => void;
 };
@@ -35,6 +36,7 @@ export function ImageCropModal({
   aspect = 4 / 3,
   title = "Recadrer l'image",
   tone = "amber",
+  mode = "modal",
   onSave,
   onCancel,
 }: Props) {
@@ -61,9 +63,8 @@ export function ImageCropModal({
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-sm p-4">
-      <div className="flex w-full max-w-2xl flex-col gap-4 rounded-3xl border border-white/10 bg-zinc-950 p-5 shadow-2xl sm:rounded-[2rem] sm:p-6">
+  const cropper = (
+    <div className="flex w-full max-w-2xl flex-col gap-4 rounded-3xl border border-white/10 bg-zinc-950 p-5 shadow-2xl sm:rounded-[2rem] sm:p-6">
         <header className="flex items-start justify-between gap-3">
           <div>
             <p
@@ -152,7 +153,16 @@ export function ImageCropModal({
             Valider l&apos;image
           </button>
         </div>
-      </div>
+    </div>
+  );
+
+  if (mode === "inline") {
+    return cropper;
+  }
+
+  return (
+    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm">
+      {cropper}
     </div>
   );
 }
