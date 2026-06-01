@@ -112,6 +112,15 @@ export async function POST(request: Request) {
   });
 
   if ("error" in result) {
+    if (result.error === "duplicate_active") {
+      return NextResponse.json(
+        {
+          message:
+            "Vous avez deja une demande en cours pour cette prestation.",
+        },
+        { status: 409 },
+      );
+    }
     if (result.error === "own_service") {
       return NextResponse.json(
         { message: "Vous ne pouvez pas réserver votre propre prestation." },

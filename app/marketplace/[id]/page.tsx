@@ -32,6 +32,7 @@ import {
   type ReviewItem,
   type ReviewSummary,
 } from "@/src/lib/reviews-store";
+import { hasActiveReservationForService } from "@/src/lib/reservations-store";
 import { getServiceById } from "@/src/lib/services-store";
 import { getUserById } from "@/src/lib/users-store";
 import { cn } from "@/src/lib/utils";
@@ -49,7 +50,14 @@ export default async function ServiceDetailPage({
   }
 
   const session = await auth();
-  const [coiffeur, catalogues, currentUser, reviewSummary, reviews] =
+  const [
+    coiffeur,
+    catalogues,
+    currentUser,
+    reviewSummary,
+    reviews,
+    hasActiveReservation,
+  ] =
     await Promise.all([
       service.ownerId ? getUserById(service.ownerId) : Promise.resolve(null),
       service.ownerId
@@ -60,6 +68,12 @@ export default async function ServiceDetailPage({
         ? getProviderReviewSummary(service.ownerId)
         : Promise.resolve({ average: 0, count: 0 }),
       service.ownerId ? getProviderReviews(service.ownerId) : Promise.resolve([]),
+      session?.user?.id
+        ? hasActiveReservationForService({
+            serviceId: service.id,
+            clientId: session.user.id,
+          })
+        : Promise.resolve(false),
     ]);
   const toneKey = getMarketplaceToneKey(
     service.ownerGender ?? coiffeur?.gender,
@@ -178,6 +192,7 @@ export default async function ServiceDetailPage({
               isOwnService={
                 Boolean(currentUser?.id) && currentUser?.id === service.ownerId
               }
+              hasActiveReservation={hasActiveReservation}
               ownerGender={service.ownerGender ?? coiffeur?.gender}
               serviceCategory={service.category}
               viewer={

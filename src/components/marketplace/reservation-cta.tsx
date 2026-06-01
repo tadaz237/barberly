@@ -16,6 +16,7 @@ type Props = {
   servicePrice: number;
   serviceDurationMin: number;
   isOwnService?: boolean;
+  hasActiveReservation?: boolean;
   ownerGender?: MarketplaceGender;
   serviceCategory?: string;
   viewer?: {
@@ -31,6 +32,7 @@ export function ReservationCta({
   servicePrice,
   serviceDurationMin,
   isOwnService = false,
+  hasActiveReservation = false,
   ownerGender,
   serviceCategory,
   viewer,
@@ -39,29 +41,38 @@ export function ReservationCta({
   const tone = MARKETPLACE_TONES[
     getMarketplaceToneKey(ownerGender, serviceCategory)
   ];
+  const disabledReason = isOwnService
+    ? "Vous ne pouvez pas réserver une prestation que vous avez publiée."
+    : hasActiveReservation
+      ? "Vous avez déjà une demande en cours pour cette prestation."
+      : "";
+  const disabled = Boolean(disabledReason);
+  const buttonLabel = isOwnService
+    ? "Votre propre prestation"
+    : hasActiveReservation
+      ? "Demande déjà envoyée"
+      : "Demander une réservation";
 
   return (
     <>
       <button
         type="button"
         onClick={() => {
-          if (!isOwnService) setOpen(true);
+          if (!disabled) setOpen(true);
         }}
-        disabled={isOwnService}
+        disabled={disabled}
         className={cn(
           "inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-semibold shadow-lg transition-colors",
-          isOwnService
+          disabled
             ? "cursor-not-allowed bg-white/10 text-white/45 shadow-none"
             : tone.solidButton,
         )}
       >
         <CalendarCheck className="size-4" />
-        {isOwnService ? "Votre propre prestation" : "Demander une réservation"}
+        {buttonLabel}
       </button>
-      {isOwnService ? (
-        <p className="mt-2 text-center text-xs text-white/45">
-          Vous ne pouvez pas réserver une prestation que vous avez publiée.
-        </p>
+      {disabledReason ? (
+        <p className="mt-2 text-center text-xs text-white/45">{disabledReason}</p>
       ) : null}
       <ReservationModal
         open={open}

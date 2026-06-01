@@ -153,11 +153,33 @@ export async function getAvailableSlots(
   return slots;
 }
 
+export async function hasActiveReservationForService(input: {
+  serviceId: string;
+  clientId: string;
+}): Promise<boolean> {
+  const count = await prisma.reservation.count({
+    where: {
+      serviceId: input.serviceId,
+      clientId: input.clientId,
+      status: { in: ["pending", "confirmed"] },
+    },
+  });
+
+  return count > 0;
+}
+
 export async function createReservation(
   input: CreateReservationInput,
 ): Promise<
   | { reservation: ReservationItem }
-  | { error: "service_not_found" | "slot_taken" | "slot_invalid" | "own_service" }
+  | {
+      error:
+        | "service_not_found"
+        | "slot_taken"
+        | "slot_invalid"
+        | "own_service"
+        | "duplicate_active";
+    }
 > {
   const service = await prisma.service.findUnique({
     where: { id: input.serviceId },
@@ -165,6 +187,17 @@ export async function createReservation(
   });
   if (!service) return { error: "service_not_found" };
   if (service.ownerId === input.clientId) return { error: "own_service" };
+
+  const activeDuplicate = await prisma.reservation.findFirst({
+    where: {
+      clientId: input.clientId,
+      serviceId: service.id,
+      status: { in: ["pending", "confirmed"] },
+    },
+    select: { id: true },
+  });
+
+  if (activeDuplicate) return { error: "duplicate_active" };
 
   const start = input.scheduledAt;
   const startHour = start.getHours();
