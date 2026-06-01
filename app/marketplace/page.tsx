@@ -35,7 +35,7 @@ export default async function MarketplacePage() {
           </Link>
 
           <div className="flex items-center gap-2">
-            <QuickAccessButton />
+            <QuickAccessButton mobilePanelPlacement="bottom" />
             {user ? (
               <Link
                 href={user.role === "client" ? "/client" : "/admin"}

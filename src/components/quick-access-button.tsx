@@ -50,7 +50,15 @@ async function copyText(value: string) {
   document.body.removeChild(textarea);
 }
 
-export function QuickAccessButton({ className }: { className?: string }) {
+type QuickAccessButtonProps = {
+  className?: string;
+  mobilePanelPlacement?: "top" | "bottom";
+};
+
+export function QuickAccessButton({
+  className,
+  mobilePanelPlacement = "top",
+}: QuickAccessButtonProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [shared, setShared] = useState(false);
@@ -108,7 +116,14 @@ export function QuickAccessButton({ className }: { className?: string }) {
       </button>
 
       {open ? (
-        <div className="fixed inset-x-3 top-16 z-50 mx-auto max-w-sm rounded-2xl border border-white/10 bg-zinc-950/95 p-3 text-xs leading-5 text-white/70 shadow-2xl shadow-black/40 backdrop-blur sm:absolute sm:inset-x-auto sm:right-0 sm:top-[calc(100%+0.6rem)] sm:mx-0 sm:w-[min(21rem,calc(100vw-2rem))] sm:max-w-none">
+        <div
+          className={cn(
+            "fixed inset-x-3 z-50 mx-auto max-w-sm rounded-2xl border border-white/10 bg-zinc-950/95 p-3 text-xs leading-5 text-white/70 shadow-2xl shadow-black/40 backdrop-blur sm:absolute sm:inset-x-auto sm:right-0 sm:top-[calc(100%+0.6rem)] sm:mx-0 sm:w-[min(21rem,calc(100vw-2rem))] sm:max-w-none",
+            mobilePanelPlacement === "bottom"
+              ? "bottom-[calc(1rem+env(safe-area-inset-bottom))] top-auto"
+              : "top-16",
+          )}
+        >
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="font-semibold text-white">
