@@ -86,6 +86,7 @@ model User {
   clientConversations Conversation[] @relation("ClientConversations")
   providerConversations Conversation[] @relation("ProviderConversations")
   sentMessages Message[] @relation("SentMessages")
+  pushSubscriptions PushSubscription[]
 
   @@map("users")
 }
@@ -262,6 +263,21 @@ model Message {
   @@index([conversationId, senderId, readAt])
   @@index([senderId])
   @@map("messages")
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("push_subscriptions")
 }
 
 model Catalogue {

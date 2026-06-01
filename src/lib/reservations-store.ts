@@ -302,3 +302,30 @@ export async function updateReservationStatus(
   });
   return toItem(updated);
 }
+
+export async function getReservationStatusNotificationTarget(
+  reservationId: string,
+  coiffeurId: string,
+): Promise<{
+  clientId: string | null;
+  serviceName: string;
+  previousStatus: ReservationStatus;
+} | null> {
+  const reservation = await prisma.reservation.findUnique({
+    where: { id: reservationId },
+    select: {
+      coiffeurId: true,
+      clientId: true,
+      status: true,
+      service: { select: { name: true } },
+    },
+  });
+
+  if (!reservation || reservation.coiffeurId !== coiffeurId) return null;
+
+  return {
+    clientId: reservation.clientId,
+    serviceName: reservation.service.name,
+    previousStatus: reservation.status,
+  };
+}

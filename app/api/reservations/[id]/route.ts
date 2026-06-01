@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 import {
+  getReservationStatusNotificationTarget,
   updateReservationStatus,
   type ReservationStatus,
 } from "@/src/lib/reservations-store";
+import { sendBrowserPushToUser } from "@/src/lib/push-notifications";
 
 const ALLOWED: ReservationStatus[] = [
   "pending",
@@ -36,6 +38,11 @@ export async function PATCH(
     return NextResponse.json({ message: "Statut invalide." }, { status: 400 });
   }
 
+  const notificationTarget = await getReservationStatusNotificationTarget(
+    id,
+    session.user.id,
+  );
+
   const updated = await updateReservationStatus(
     id,
     session.user.id,
@@ -46,6 +53,18 @@ export async function PATCH(
       { message: "Réservation introuvable ou non autorisée." },
       { status: 404 },
     );
+  }
+
+  if (
+    body.status === "confirmed" &&
+    notificationTarget?.previousStatus !== "confirmed"
+  ) {
+    await sendBrowserPushToUser(notificationTarget?.clientId, {
+      title: "Reservation acceptee",
+      body: `Votre reservation pour ${updated.serviceName} a ete acceptee.`,
+      url: "/client",
+      tag: `reservation-${updated.id}`,
+    });
   }
 
   return NextResponse.json({ reservation: updated });

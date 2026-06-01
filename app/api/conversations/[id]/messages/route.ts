@@ -4,6 +4,7 @@ import {
   getConversationForUser,
   sendConversationMessage,
 } from "@/src/lib/conversations-store";
+import { sendBrowserPushToUser } from "@/src/lib/push-notifications";
 
 type IncomingPayload = {
   body?: unknown;
@@ -78,6 +79,20 @@ export async function POST(
       { status: 404 },
     );
   }
+
+  const recipientId =
+    conversation.providerId === session.user.id
+      ? conversation.clientId
+      : conversation.providerId;
+  const recipientUrl =
+    recipientId === conversation.clientId ? "/client/messages" : "/admin/messages";
+
+  await sendBrowserPushToUser(recipientId, {
+    title: `Nouveau message de ${conversation.lastMessage?.senderName ?? "Barberly"}`,
+    body: body.body.trim(),
+    url: recipientUrl,
+    tag: `conversation-${conversation.id}`,
+  });
 
   return NextResponse.json(
     { conversation, message: "Message envoyé." },
