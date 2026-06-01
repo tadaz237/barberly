@@ -90,7 +90,7 @@ export default async function AdminPage() {
   const platformAdmin = isPlatformAdmin(session.user.email)
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-black text-white">
+    <main className="relative min-h-screen overflow-x-clip bg-black text-white">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.045)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.045)_1px,transparent_1px)] bg-size-[56px_56px] opacity-50"
@@ -103,7 +103,7 @@ export default async function AdminPage() {
         )}
       />
 
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-black/85 backdrop-blur-xl">
+      <header className="fixed inset-x-0 top-0 z-[80] border-b border-white/10 bg-black/90 shadow-2xl shadow-black/40 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-7xl flex-col items-stretch gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <div
@@ -188,6 +188,7 @@ export default async function AdminPage() {
           </div>
         </div>
       </header>
+      <div aria-hidden className="h-36 sm:h-24 lg:h-[4.5rem]" />
 
       <section className="relative mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:gap-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
         <KycBanner status={status} submission={submission} toneKey={toneKey} />
