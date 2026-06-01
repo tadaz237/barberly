@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, UserRound } from "lucide-react";
 import { ServicesShowcase } from "@/src/components/marketplace/services-showcase";
-import { PwaInstallButton } from "@/src/components/pwa-install-button";
+import { QuickAccessButton } from "@/src/components/quick-access-button";
 import { auth } from "@/src/lib/auth";
 import { getUserById } from "@/src/lib/users-store";
 
@@ -35,7 +35,7 @@ export default async function MarketplacePage() {
           </Link>
 
           <div className="flex items-center gap-2">
-            <PwaInstallButton />
+            <QuickAccessButton />
             {user ? (
               <Link
                 href={user.role === "client" ? "/client" : "/admin"}

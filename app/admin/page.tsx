@@ -24,7 +24,7 @@ import {
 import { AdminServicesPanel } from "@/src/components/admin/admin-services-panel"
 import { SignOutButton } from "@/src/components/auth/sign-out-button"
 import { MessagesLinkWithNotifications } from "@/src/components/messages/message-notifications"
-import { PwaInstallButton } from "@/src/components/pwa-install-button"
+import { QuickAccessButton } from "@/src/components/quick-access-button"
 import { auth } from "@/src/lib/auth"
 import {
   countCataloguesByOwner,
@@ -183,7 +183,7 @@ export default async function AdminPage() {
                 <span className="hidden sm:inline">Validation KYC</span>
               </Link>
             ) : null}
-            <PwaInstallButton />
+            <QuickAccessButton />
             <SignOutButton />
           </div>
         </div>
