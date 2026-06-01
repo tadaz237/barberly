@@ -276,7 +276,7 @@ export function AdminCatalogueCard({ catalogue }: { catalogue: Catalogue }) {
           <form onSubmit={submitUpdate} className="space-y-4 p-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="grid gap-1.5 text-sm font-medium text-white/80">
-                Nom du portfolio
+                Nom du catalogue
                 <input
                   type="text"
                   value={name}

@@ -13,7 +13,6 @@ import {
   ShieldX,
   Sparkles,
   Store,
-  UserCog,
   UserRound,
 } from "lucide-react"
 import {
@@ -105,7 +104,11 @@ export default async function AdminPage() {
 
       <header className="fixed inset-x-0 top-0 z-[80] border-b border-white/10 bg-black/90 shadow-2xl shadow-black/40 backdrop-blur-xl">
         <div className="mx-auto flex w-full max-w-7xl flex-col items-stretch gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-          <div className="flex min-w-0 items-center gap-3">
+          <Link
+            href="/admin/profile"
+            aria-label="Ouvrir mon profil"
+            className="flex min-w-0 items-center gap-3 rounded-2xl pr-2 transition-colors hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/25"
+          >
             <div
               className={cn(
                 "flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-full border sm:size-10",
@@ -135,7 +138,7 @@ export default async function AdminPage() {
                 </p>
               ) : null}
             </div>
-          </div>
+          </Link>
           <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
             <Link
               href="/marketplace"
@@ -153,10 +156,10 @@ export default async function AdminPage() {
             </Link>
             <Link
               href="/admin/catalogues"
-              className="hidden h-9 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 text-xs font-medium text-white/70 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white sm:inline-flex"
+              className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 text-xs font-medium text-white/70 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white"
             >
               <Images className="size-4" />
-              Portfolio
+              Catalogue
             </Link>
             <MessagesLinkWithNotifications
               href="/admin/messages"
@@ -164,16 +167,6 @@ export default async function AdminPage() {
             >
               <span className="hidden sm:inline">Messages</span>
             </MessagesLinkWithNotifications>
-            <Link
-              href="/admin/profile"
-              className={cn(
-                "inline-flex h-9 items-center gap-2 rounded-full border px-3 text-xs font-semibold transition-all duration-200 hover:-translate-y-0.5",
-                tone.profileButton,
-              )}
-            >
-              <UserCog className="size-4" />
-              <span className="hidden sm:inline">Profil</span>
-            </Link>
             {platformAdmin ? (
               <Link
                 href="/platform/kyc"
@@ -636,7 +629,7 @@ function PlanCard({
           <strong className="text-white">{publishRhythmDisplay}</strong>
         </li>
         <li className="flex items-center justify-between gap-2">
-          <span className="text-white/55">Portfolio</span>
+          <span className="text-white/55">Catalogue</span>
           <strong className="text-white">{cataloguesLimitDisplay}</strong>
         </li>
       </ul>

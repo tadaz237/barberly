@@ -168,7 +168,7 @@ export function AdminCatalogueForm({ remainingSlots }: Props) {
         </span>
         <div className="flex-1 space-y-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-200">
-            Nouveau portfolio
+            Nouveau catalogue
           </p>
           <h2 className="text-lg font-semibold tracking-tight text-white sm:text-xl">
             Publiez vos realisations
@@ -189,7 +189,7 @@ export function AdminCatalogueForm({ remainingSlots }: Props) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-1.5 text-sm font-medium text-white/80">
-          Nom du portfolio
+          Nom du catalogue
           <input
             type="text"
             value={name}
@@ -207,7 +207,7 @@ export function AdminCatalogueForm({ remainingSlots }: Props) {
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Ce que ce portfolio regroupe"
+            placeholder="Ce que ce catalogue regroupe"
             disabled={isPending || noSlotLeft}
             className={inputClass}
           />

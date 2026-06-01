@@ -68,7 +68,7 @@ export default async function AdminCataloguesPage() {
         <header className="space-y-3">
           <span className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.22em] text-amber-200">
             <ImageIcon className="size-3.5" />
-            Portfolio & boutique
+            Catalogue & boutique
           </span>
           <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
             Vos realisations et produits, separes proprement.
@@ -87,7 +87,7 @@ export default async function AdminCataloguesPage() {
         {catalogues.length > 0 ? (
           <section className="space-y-4">
             <h2 className="text-lg font-semibold text-white sm:text-xl">
-              Portfolio / realisations
+              Catalogue / realisations
             </h2>
             <ul className="grid gap-4 sm:grid-cols-2">
               {catalogues.map((catalogue) => (
