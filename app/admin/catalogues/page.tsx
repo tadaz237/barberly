@@ -1,11 +1,19 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, ImageIcon, Sparkles } from "lucide-react";
+import { ArrowLeft, ImageIcon, ShoppingBag, Sparkles } from "lucide-react";
 import { AdminCatalogueCard } from "@/src/components/admin/admin-catalogue-card";
 import { AdminCatalogueForm } from "@/src/components/admin/admin-catalogue-form";
+import { AdminProductCard } from "@/src/components/admin/admin-product-card";
+import { AdminProductForm } from "@/src/components/admin/admin-product-form";
 import { auth } from "@/src/lib/auth";
 import { getCataloguesByOwner } from "@/src/lib/catalogues-store";
+import { getProductCategoryOptions } from "@/src/lib/product-categories";
 import {
+  getProductsByOwner,
+  normalizeProductAudience,
+} from "@/src/lib/products-store";
+import {
+  getKycSubmission,
   getUserById,
   getUserLimits,
   getUserPlan,
@@ -22,12 +30,18 @@ export default async function AdminCataloguesPage() {
     redirect("/client");
   }
 
-  const [catalogues, limits, plan] = await Promise.all([
+  const [catalogues, products, limits, plan, submission] = await Promise.all([
     getCataloguesByOwner(session.user.id),
+    getProductsByOwner(session.user.id),
     getUserLimits(session.user.id),
     getUserPlan(session.user.id),
+    getKycSubmission(session.user.id),
   ]);
 
+  const productAudience = normalizeProductAudience(
+    user?.gender ?? submission?.gender,
+  );
+  const productCategoryOptions = getProductCategoryOptions(productAudience);
   const remaining = Number.isFinite(limits.cataloguesMax)
     ? Math.max(0, limits.cataloguesMax - catalogues.length)
     : 999;
@@ -54,15 +68,17 @@ export default async function AdminCataloguesPage() {
         <header className="space-y-3">
           <span className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.22em] text-amber-200">
             <ImageIcon className="size-3.5" />
-            Mes catalogues
+            Portfolio & boutique
           </span>
           <h1 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
-            Vos coiffures réalisées, regroupées en catalogues.
+            Vos realisations et produits, separes proprement.
           </h1>
           <p className="max-w-2xl text-sm leading-6 text-white/55 sm:text-base">
             {catalogues.length} catalogue{catalogues.length > 1 ? "s" : ""}{" "}
             publié{catalogues.length > 1 ? "s" : ""} · {formattedMax} max avec
-            le forfait <strong className="text-amber-200">{PLAN_LABEL[plan]}</strong>.
+            le forfait <strong className="text-amber-200">{PLAN_LABEL[plan]}</strong>{" "}
+            · {products.length} produit{products.length > 1 ? "s" : ""} en
+            boutique.
           </p>
         </header>
 
@@ -71,7 +87,7 @@ export default async function AdminCataloguesPage() {
         {catalogues.length > 0 ? (
           <section className="space-y-4">
             <h2 className="text-lg font-semibold text-white sm:text-xl">
-              Catalogues existants
+              Portfolio / realisations
             </h2>
             <ul className="grid gap-4 sm:grid-cols-2">
               {catalogues.map((catalogue) => (
@@ -80,6 +96,39 @@ export default async function AdminCataloguesPage() {
             </ul>
           </section>
         ) : null}
+
+        <section className="space-y-4">
+          <div className="space-y-2">
+            <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.22em] text-emerald-200">
+              <ShoppingBag className="size-3.5" />
+              Produits du pro
+            </span>
+            <h2 className="text-lg font-semibold text-white sm:text-xl">
+              Boutique visible sur vos fiches marketplace
+            </h2>
+            <p className="max-w-2xl text-sm leading-6 text-white/55">
+              Les clientes ou clients demandent la disponibilite du produit
+              avant de commander.
+            </p>
+          </div>
+
+          <AdminProductForm
+            audience={productAudience}
+            categoryOptions={productCategoryOptions}
+          />
+
+          {products.length > 0 ? (
+            <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {products.map((product) => (
+                <AdminProductCard
+                  key={product.id}
+                  product={product}
+                  categoryOptions={productCategoryOptions}
+                />
+              ))}
+            </ul>
+          ) : null}
+        </section>
 
         <section className="rounded-3xl border border-amber-400/20 bg-amber-400/5 p-5 text-sm sm:rounded-[2rem] sm:p-6">
           <div className="flex items-start gap-3">

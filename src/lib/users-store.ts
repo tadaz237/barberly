@@ -336,6 +336,7 @@ export async function getAccountDeletionSnapshot(
           photos: { select: { image: true } },
         },
       },
+      products: { select: { image: true } },
     },
   });
 
@@ -352,6 +353,7 @@ export async function getAccountDeletionSnapshot(
       ...user.catalogues.flatMap((catalogue) =>
         catalogue.photos.map((photo) => photo.image),
       ),
+      ...user.products.map((product) => product.image),
     ].filter((imageUrl): imageUrl is string => Boolean(imageUrl)),
   };
 }

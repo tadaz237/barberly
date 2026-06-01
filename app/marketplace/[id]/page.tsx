@@ -6,9 +6,11 @@ import {
   CalendarCheck,
   Clock3,
   Crown,
+  Mail,
   MapPin,
   Phone,
   ShieldCheck,
+  ShoppingBag,
   Sparkles,
   Star,
   TrendingUp,
@@ -26,6 +28,12 @@ import {
 } from "@/src/components/marketplace/marketplace-theme";
 import { getCataloguesByOwner } from "@/src/lib/catalogues-store";
 import { auth } from "@/src/lib/auth";
+import {
+  getProductCategoryByKey,
+  getProductCategoryKeywords,
+  getProductRelationLabel,
+} from "@/src/lib/product-categories";
+import { getProductsByOwner, type ProductItem } from "@/src/lib/products-store";
 import {
   getProviderReviewSummary,
   getProviderReviews,
@@ -53,6 +61,7 @@ export default async function ServiceDetailPage({
   const [
     coiffeur,
     catalogues,
+    products,
     currentUser,
     reviewSummary,
     reviews,
@@ -62,6 +71,9 @@ export default async function ServiceDetailPage({
       service.ownerId ? getUserById(service.ownerId) : Promise.resolve(null),
       service.ownerId
         ? getCataloguesByOwner(service.ownerId)
+        : Promise.resolve([]),
+      service.ownerId
+        ? getProductsByOwner(service.ownerId, { availableOnly: true })
         : Promise.resolve([]),
       session?.user?.id ? getUserById(session.user.id) : Promise.resolve(null),
       service.ownerId
@@ -83,6 +95,9 @@ export default async function ServiceDetailPage({
   const roleLabel = getMarketplaceRoleLabel(toneKey);
   const fallbackProviderName =
     toneKey === "male" ? "ce coiffeur" : "cette coiffeuse";
+  const visibleProducts = products.filter(
+    (product) => getProductCategoryByKey(product.category)?.audience === toneKey,
+  );
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
@@ -221,6 +236,15 @@ export default async function ServiceDetailPage({
 
         <ReviewsSection reviews={reviews} tone={tone} />
 
+        {visibleProducts.length > 0 ? (
+          <ProfessionalProductsSection
+            products={visibleProducts}
+            service={service}
+            provider={coiffeur}
+            tone={tone}
+          />
+        ) : null}
+
         {catalogues.length > 0 ? (
           <section className="space-y-5">
             <div className="space-y-1">
@@ -230,13 +254,13 @@ export default async function ServiceDetailPage({
                   tone.text,
                 )}
               >
-                Portfolio
+                Portfolio / realisations
               </p>
               <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
-                Catalogues de réalisations
+                Realisations du pro
               </h2>
               <p className="text-sm text-white/55">
-                Les coiffures déjà réalisées par{" "}
+                Les coiffures deja realisees par{" "}
                 {coiffeur?.name ?? fallbackProviderName}.
               </p>
             </div>
@@ -514,6 +538,198 @@ function ReviewsSection({
       </div>
     </section>
   );
+}
+
+type ServiceProductContext = {
+  name: string;
+  category: string;
+  description: string;
+};
+
+function ProfessionalProductsSection({
+  products,
+  service,
+  provider,
+  tone,
+}: {
+  products: ProductItem[];
+  service: ServiceProductContext;
+  provider: CoiffeurInfo;
+  tone: MarketplaceTone;
+}) {
+  const scored = products
+    .map((product) => ({
+      product,
+      score: getProductServiceScore(product, service),
+    }))
+    .sort((a, b) => b.score - a.score);
+  const hasRelevantProducts = scored.some((entry) => entry.score > 0);
+
+  return (
+    <section className="space-y-5">
+      <div className="space-y-1">
+        <p
+          className={cn(
+            "text-[11px] font-semibold uppercase tracking-[0.22em]",
+            tone.text,
+          )}
+        >
+          Boutique du pro
+        </p>
+        <h2 className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">
+          {hasRelevantProducts
+            ? "Produits utiles pour cette prestation"
+            : "Produits disponibles"}
+        </h2>
+        <p className="text-sm text-white/55">
+          Le pro confirme la disponibilite et les details de commande
+          directement.
+        </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {scored.map(({ product, score }) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            relationLabel={
+              score > 0
+                ? `${service.name} + ${getProductRelationLabel(product.category)}`
+                : "Disponible dans la boutique"
+            }
+            provider={provider}
+            serviceName={service.name}
+            tone={tone}
+          />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ProductCard({
+  product,
+  relationLabel,
+  provider,
+  serviceName,
+  tone,
+}: {
+  product: ProductItem;
+  relationLabel: string;
+  provider: CoiffeurInfo;
+  serviceName: string;
+  tone: MarketplaceTone;
+}) {
+  const inquiryHref = provider
+    ? buildProductInquiryHref({
+        email: provider.email,
+        providerName: provider.name,
+        productName: product.name,
+        serviceName,
+      })
+    : null;
+
+  return (
+    <article className="overflow-hidden rounded-3xl border border-white/10 bg-linear-to-br from-zinc-800/60 via-zinc-900/70 to-zinc-950/90 backdrop-blur">
+      <div className="relative">
+        <ImageLightbox src={product.image} alt={product.name}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={product.image}
+            alt={product.name}
+            className="aspect-square w-full object-cover"
+          />
+        </ImageLightbox>
+        <span
+          className={cn(
+            "absolute top-3 left-3 inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] backdrop-blur",
+            tone.chip,
+          )}
+        >
+          {product.categoryLabel}
+        </span>
+      </div>
+
+      <div className="space-y-3 p-5">
+        <div className="space-y-1">
+          <p className="text-base font-semibold text-white">{product.name}</p>
+          <p className={cn("text-xs font-semibold", tone.text)}>
+            {relationLabel}
+          </p>
+          {product.description ? (
+            <p className="line-clamp-2 text-xs leading-5 text-white/55">
+              {product.description}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="flex items-center justify-between gap-3 border-t border-white/10 pt-3">
+          <p className="text-lg font-semibold text-white">
+            {product.price.toLocaleString("fr-FR")}
+            <span className="ml-1 text-xs text-white/55">FCFA</span>
+          </p>
+          {inquiryHref ? (
+            <a
+              href={inquiryHref}
+              className={cn(
+                "inline-flex h-10 shrink-0 items-center gap-2 rounded-2xl px-3.5 text-xs font-semibold shadow-lg transition-colors",
+                tone.solidButton,
+              )}
+            >
+              <Mail className="size-3.5" />
+              Disponibilite
+            </a>
+          ) : (
+            <span className="inline-flex h-10 shrink-0 items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3.5 text-xs font-semibold text-white/45">
+              <ShoppingBag className="size-3.5" />
+              A demander
+            </span>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function getProductServiceScore(
+  product: ProductItem,
+  service: ServiceProductContext,
+) {
+  const haystack = normalizeMatchText(
+    `${service.name} ${service.category} ${service.description}`,
+  );
+
+  return getProductCategoryKeywords(product.category).reduce((score, keyword) => {
+    const normalizedKeyword = normalizeMatchText(keyword);
+    return haystack.includes(normalizedKeyword) ? score + 1 : score;
+  }, 0);
+}
+
+function normalizeMatchText(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function buildProductInquiryHref({
+  email,
+  providerName,
+  productName,
+  serviceName,
+}: {
+  email: string;
+  providerName: string;
+  productName: string;
+  serviceName: string;
+}) {
+  const subject = encodeURIComponent(`Disponibilite - ${productName}`);
+  const body = encodeURIComponent(
+    `Bonjour ${providerName},\nJe souhaite verifier la disponibilite de "${productName}" pour la prestation "${serviceName}".\nMerci.`,
+  );
+
+  return `mailto:${email}?subject=${subject}&body=${body}`;
 }
 
 function CoiffeurPlanBadge({

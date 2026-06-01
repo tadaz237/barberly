@@ -156,7 +156,7 @@ export default async function AdminPage() {
               className="hidden h-9 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 text-xs font-medium text-white/70 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white sm:inline-flex"
             >
               <Images className="size-4" />
-              Catalogues
+              Portfolio
             </Link>
             <MessagesLinkWithNotifications
               href="/admin/messages"
@@ -636,7 +636,7 @@ function PlanCard({
           <strong className="text-white">{publishRhythmDisplay}</strong>
         </li>
         <li className="flex items-center justify-between gap-2">
-          <span className="text-white/55">Catalogues</span>
+          <span className="text-white/55">Portfolio</span>
           <strong className="text-white">{cataloguesLimitDisplay}</strong>
         </li>
       </ul>

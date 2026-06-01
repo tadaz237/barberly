@@ -78,6 +78,7 @@ model User {
   kyc        Kyc?
   services   Service[]
   catalogues Catalogue[]
+  products   Product[]
   planPayments PlanPayment[]
   verificationCodes VerificationCode[]
   clientReservations Reservation[] @relation("ClientReservations")
@@ -305,4 +306,21 @@ model CataloguePhoto {
 
   @@index([catalogueId])
   @@map("catalogue_photos")
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  ownerId     String
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name        String
+  category    String
+  description String?
+  price       Float
+  image       String
+  available   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([ownerId])
+  @@map("products")
 }

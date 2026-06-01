@@ -276,7 +276,7 @@ export function AdminCatalogueCard({ catalogue }: { catalogue: Catalogue }) {
           <form onSubmit={submitUpdate} className="space-y-4 p-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="grid gap-1.5 text-sm font-medium text-white/80">
-                Nom du catalogue
+                Nom du portfolio
                 <input
                   type="text"
                   value={name}
@@ -350,7 +350,7 @@ export function AdminCatalogueCard({ catalogue }: { catalogue: Catalogue }) {
                         onChange={(event) =>
                           updatePhoto(photo.key, "caption", event.target.value)
                         }
-                        placeholder="Titre de la coiffure"
+                        placeholder="Titre de la realisation"
                         disabled={isPending}
                         className={smallInputClass}
                       />

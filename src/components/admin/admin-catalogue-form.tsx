@@ -168,14 +168,14 @@ export function AdminCatalogueForm({ remainingSlots }: Props) {
         </span>
         <div className="flex-1 space-y-1">
           <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-200">
-            Nouveau catalogue
+            Nouveau portfolio
           </p>
           <h2 className="text-lg font-semibold tracking-tight text-white sm:text-xl">
-            Publiez vos coiffures réalisées
+            Publiez vos realisations
           </h2>
           <p className="text-sm text-white/55">
-            Chaque photo peut avoir un titre et un prix indicatif visible par
-            les clientes.
+            Chaque photo peut avoir un titre et un prix indicatif visible sur
+            la fiche marketplace.
           </p>
         </div>
       </header>
@@ -189,7 +189,7 @@ export function AdminCatalogueForm({ remainingSlots }: Props) {
 
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="grid gap-1.5 text-sm font-medium text-white/80">
-          Nom du catalogue
+          Nom du portfolio
           <input
             type="text"
             value={name}
@@ -207,7 +207,7 @@ export function AdminCatalogueForm({ remainingSlots }: Props) {
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Ce que ce catalogue regroupe"
+            placeholder="Ce que ce portfolio regroupe"
             disabled={isPending || noSlotLeft}
             className={inputClass}
           />
@@ -280,7 +280,7 @@ export function AdminCatalogueForm({ remainingSlots }: Props) {
                     onChange={(e) =>
                       updatePhoto(photo.key, "caption", e.target.value)
                     }
-                    placeholder="Titre de la coiffure"
+                    placeholder="Titre de la realisation"
                     disabled={isPending}
                     className="h-9 rounded-lg border border-white/10 bg-white/5 px-3 text-sm text-white placeholder:text-white/40 focus:border-amber-400/40 focus:outline-none"
                   />
