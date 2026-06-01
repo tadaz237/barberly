@@ -27,7 +27,6 @@ type IncomingPayload = {
 const IMAGE_DATA_URL_RE =
   /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/;
 const MAX_IMAGE_DATA_URL_LENGTH = 3_000_000;
-const MAX_PHOTOS_PER_CATALOGUE = 4;
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -119,9 +118,11 @@ export async function POST(request: Request) {
     );
   }
 
-  if (body.photos.length > MAX_PHOTOS_PER_CATALOGUE) {
+  if (body.photos.length > limits.cataloguePhotosMax) {
     return NextResponse.json(
-      { message: `Maximum ${MAX_PHOTOS_PER_CATALOGUE} photos par catalogue.` },
+      {
+        message: `Maximum ${limits.cataloguePhotosMax} photos par catalogue avec votre forfait actuel.`,
+      },
       { status: 400 },
     );
   }

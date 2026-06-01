@@ -21,7 +21,6 @@ import {
 import { ImageCropModal } from "@/src/components/ui/image-crop-modal";
 import type { Catalogue } from "@/src/lib/catalogues-store";
 
-const MAX_PHOTOS = 4;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 type Photo = {
@@ -45,7 +44,13 @@ function catalogueToPhotos(catalogue: Catalogue): Photo[] {
   }));
 }
 
-export function AdminCatalogueCard({ catalogue }: { catalogue: Catalogue }) {
+export function AdminCatalogueCard({
+  catalogue,
+  photoLimit,
+}: {
+  catalogue: Catalogue;
+  photoLimit: number;
+}) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(catalogue.name);
@@ -203,7 +208,7 @@ export function AdminCatalogueCard({ catalogue }: { catalogue: Catalogue }) {
     }
   }
 
-  const reachedMax = photos.length >= MAX_PHOTOS;
+  const reachedMax = photos.length >= photoLimit;
 
   return (
     <>
@@ -300,7 +305,7 @@ export function AdminCatalogueCard({ catalogue }: { catalogue: Catalogue }) {
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm font-medium text-white/80">
-                  Photos ({photos.length}/{MAX_PHOTOS})
+                  Photos ({photos.length}/{photoLimit})
                 </p>
                 <button
                   type="button"

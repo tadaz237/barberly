@@ -27,9 +27,14 @@ type Submission =
 type Props = {
   audience: ProductAudience | null;
   categoryOptions: ProductCategoryOption[];
+  remainingSlots: number;
 };
 
-export function AdminProductForm({ audience, categoryOptions }: Props) {
+export function AdminProductForm({
+  audience,
+  categoryOptions,
+  remainingSlots,
+}: Props) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [category, setCategory] = useState(categoryOptions[0]?.key ?? "");
@@ -41,6 +46,8 @@ export function AdminProductForm({ audience, categoryOptions }: Props) {
   const [status, setStatus] = useState<Submission>({ state: "idle" });
   const [isPending, startTransition] = useTransition();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const noSlotLeft = remainingSlots <= 0;
+  const disabled = isPending || !audience || noSlotLeft;
 
   function handleFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -74,6 +81,13 @@ export function AdminProductForm({ audience, categoryOptions }: Props) {
       setStatus({
         state: "error",
         message: "Completez le genre de votre profil pro avant de publier.",
+      });
+      return;
+    }
+    if (noSlotLeft) {
+      setStatus({
+        state: "error",
+        message: "Limite de publications boutique atteinte avec ce forfait.",
       });
       return;
     }
@@ -145,7 +159,6 @@ export function AdminProductForm({ audience, categoryOptions }: Props) {
     audience === "male"
       ? "Categories limitees aux soins barbe, coiffage et produits homme."
       : "Categories limitees aux produits femme: meches, extensions, lace, perruques et soins.";
-
   return (
     <>
       <form
@@ -174,6 +187,14 @@ export function AdminProductForm({ audience, categoryOptions }: Props) {
           </div>
         ) : null}
 
+        {noSlotLeft ? (
+          <div className="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 p-4 text-sm text-emerald-100">
+            Vous avez atteint la limite de publications boutique de votre
+            forfait actuel. Passez a un forfait superieur pour publier plus de
+            produits.
+          </div>
+        ) : null}
+
         <div className="grid gap-4 lg:grid-cols-[220px_1fr]">
           <div className="space-y-3">
             {image ? (
@@ -194,7 +215,7 @@ export function AdminProductForm({ audience, categoryOptions }: Props) {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isPending || !audience}
+                disabled={disabled}
                 className="flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-white/15 bg-white/3 text-white/55 transition-colors hover:border-emerald-400/40 hover:bg-emerald-400/5 hover:text-emerald-200 disabled:opacity-50"
               >
                 <ImagePlus className="size-5" />
@@ -204,7 +225,7 @@ export function AdminProductForm({ audience, categoryOptions }: Props) {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              disabled={isPending || !audience}
+              disabled={disabled}
               className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 text-sm font-semibold text-emerald-200 transition-colors hover:bg-emerald-400/20 disabled:opacity-50"
             >
               <ImagePlus className="size-4" />
@@ -229,7 +250,7 @@ export function AdminProductForm({ audience, categoryOptions }: Props) {
                 placeholder={
                   audience === "male" ? "Ex : Pommade coiffante" : "Ex : Meches bresiliennes"
                 }
-                disabled={isPending || !audience}
+                disabled={disabled}
                 className={inputClass}
               />
             </label>
@@ -239,7 +260,7 @@ export function AdminProductForm({ audience, categoryOptions }: Props) {
               <select
                 value={category}
                 onChange={(event) => setCategory(event.target.value)}
-                disabled={isPending || !audience || categoryOptions.length === 0}
+                disabled={disabled || categoryOptions.length === 0}
                 className={inputClass}
               >
                 {categoryOptions.map((option) => (
@@ -260,7 +281,7 @@ export function AdminProductForm({ audience, categoryOptions }: Props) {
                   value={price}
                   onChange={(event) => setPrice(event.target.value)}
                   placeholder="15000"
-                  disabled={isPending || !audience}
+                  disabled={disabled}
                   className={`${inputClass} pr-14`}
                 />
                 <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-[10px] font-semibold text-white/40">
@@ -274,7 +295,7 @@ export function AdminProductForm({ audience, categoryOptions }: Props) {
                 type="checkbox"
                 checked={available}
                 onChange={(event) => setAvailable(event.target.checked)}
-                disabled={isPending || !audience}
+                disabled={disabled}
                 className="size-4 rounded border-white/15 accent-emerald-400"
               />
               Disponible a la demande
@@ -287,7 +308,7 @@ export function AdminProductForm({ audience, categoryOptions }: Props) {
                 onChange={(event) => setDescription(event.target.value)}
                 rows={3}
                 placeholder="Matiere, couleur, longueur, conseil d'utilisation..."
-                disabled={isPending || !audience}
+                disabled={disabled}
                 className={`${inputClass} h-auto min-h-24 py-3`}
               />
             </label>
@@ -314,10 +335,15 @@ export function AdminProductForm({ audience, categoryOptions }: Props) {
           </div>
         ) : null}
 
-        <div className="flex justify-end">
+        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-white/40">
+            Forfait actuel : {remainingSlots} publication
+            {remainingSlots > 1 ? "s" : ""} boutique restante
+            {remainingSlots > 1 ? "s" : ""}.
+          </p>
           <button
             type="submit"
-            disabled={isPending || !audience}
+            disabled={disabled}
             className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-emerald-400 px-5 text-sm font-semibold text-emerald-950 shadow-lg shadow-emerald-500/25 transition-colors hover:bg-emerald-300 disabled:opacity-60"
           >
             {isPending ? (

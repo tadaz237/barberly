@@ -45,8 +45,15 @@ export default async function AdminCataloguesPage() {
   const remaining = Number.isFinite(limits.cataloguesMax)
     ? Math.max(0, limits.cataloguesMax - catalogues.length)
     : 999;
+  const remainingProducts = Number.isFinite(limits.productsMax)
+    ? Math.max(0, limits.productsMax - products.length)
+    : 999;
   const formattedMax = Number.isFinite(limits.cataloguesMax)
     ? limits.cataloguesMax
+    : "∞";
+
+  const formattedProductsMax = Number.isFinite(limits.productsMax)
+    ? limits.productsMax
     : "∞";
 
   return (
@@ -77,12 +84,15 @@ export default async function AdminCataloguesPage() {
             {catalogues.length} catalogue{catalogues.length > 1 ? "s" : ""}{" "}
             publié{catalogues.length > 1 ? "s" : ""} · {formattedMax} max avec
             le forfait <strong className="text-amber-200">{PLAN_LABEL[plan]}</strong>{" "}
-            · {products.length} produit{products.length > 1 ? "s" : ""} en
-            boutique.
+            · {products.length}/{formattedProductsMax} produit
+            {products.length > 1 ? "s" : ""} en boutique.
           </p>
         </header>
 
-        <AdminCatalogueForm remainingSlots={remaining} />
+        <AdminCatalogueForm
+          remainingSlots={remaining}
+          photoLimit={limits.cataloguePhotosMax}
+        />
 
         {catalogues.length > 0 ? (
           <section className="space-y-4">
@@ -91,7 +101,11 @@ export default async function AdminCataloguesPage() {
             </h2>
             <ul className="grid gap-4 sm:grid-cols-2">
               {catalogues.map((catalogue) => (
-                <AdminCatalogueCard key={catalogue.id} catalogue={catalogue} />
+                <AdminCatalogueCard
+                  key={catalogue.id}
+                  catalogue={catalogue}
+                  photoLimit={limits.cataloguePhotosMax}
+                />
               ))}
             </ul>
           </section>
@@ -115,6 +129,7 @@ export default async function AdminCataloguesPage() {
           <AdminProductForm
             audience={productAudience}
             categoryOptions={productCategoryOptions}
+            remainingSlots={remainingProducts}
           />
 
           {products.length > 0 ? (
@@ -138,8 +153,8 @@ export default async function AdminCataloguesPage() {
                 Envie de publier davantage&nbsp;?
               </p>
               <p className="text-white/60">
-                Les forfaits supérieurs débloquent plus de catalogues et un
-                meilleur placement sur la marketplace.
+                Les forfaits supérieurs débloquent plus de catalogues, plus de
+                produits boutique et un meilleur placement sur la marketplace.
               </p>
               <Link
                 href="/admin/plans"

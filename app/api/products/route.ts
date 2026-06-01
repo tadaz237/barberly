@@ -6,6 +6,7 @@ import {
 } from "@/src/lib/cloudinary";
 import {
   addProduct,
+  countProductsByOwner,
   getProductsByOwner,
   normalizeProductAudience,
 } from "@/src/lib/products-store";
@@ -16,6 +17,7 @@ import {
 import {
   getKycSubmission,
   getUserById,
+  getUserLimits,
   isProfessionalUser,
 } from "@/src/lib/users-store";
 
@@ -102,6 +104,17 @@ export async function POST(request: Request) {
           "Completez le genre de votre profil pro avant de publier des produits.",
       },
       { status: 403 },
+    );
+  }
+
+  const limits = await getUserLimits(session.user.id);
+  const existingProducts = await countProductsByOwner(session.user.id);
+  if (existingProducts >= limits.productsMax) {
+    return NextResponse.json(
+      {
+        message: `Limite atteinte : ${limits.productsMax} produits maximum dans votre boutique avec votre forfait actuel. Passez a un forfait superieur pour en publier plus.`,
+      },
+      { status: 429 },
     );
   }
 

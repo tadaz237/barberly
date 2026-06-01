@@ -28,6 +28,7 @@ import { auth } from "@/src/lib/auth"
 import {
   countCataloguesByOwner,
 } from "@/src/lib/catalogues-store"
+import { countProductsByOwner } from "@/src/lib/products-store"
 import {
   countServicesByOwner,
   countServicesPublishedToday,
@@ -59,6 +60,7 @@ export default async function AdminPage() {
     todayCount,
     servicesCount,
     cataloguesCount,
+    productsCount,
   ] = await Promise.all([
     getUserById(session.user.id),
     getKycSubmission(session.user.id),
@@ -67,6 +69,7 @@ export default async function AdminPage() {
     countServicesPublishedToday(session.user.id),
     countServicesByOwner(session.user.id),
     countCataloguesByOwner(session.user.id),
+    countProductsByOwner(session.user.id),
   ])
 
   const user = resolvedUser ?? {
@@ -220,6 +223,7 @@ export default async function AdminPage() {
             todayCount={todayCount}
             servicesCount={servicesCount}
             cataloguesCount={cataloguesCount}
+            productsCount={productsCount}
             toneKey={toneKey}
           />
         </div>
@@ -574,6 +578,7 @@ function PlanCard({
   todayCount,
   servicesCount,
   cataloguesCount,
+  productsCount,
   toneKey,
 }: {
   plan: Plan
@@ -582,10 +587,13 @@ function PlanCard({
     servicesMax: number
     servicePublishCooldownDays: number
     cataloguesMax: number
+    cataloguePhotosMax: number
+    productsMax: number
   }
   todayCount: number
   servicesCount: number
   cataloguesCount: number
+  productsCount: number
   toneKey: AdminToneKey
 }) {
   const tone = ADMIN_TONES[toneKey]
@@ -601,6 +609,9 @@ function PlanCard({
   const cataloguesLimitDisplay = Number.isFinite(limits.cataloguesMax)
     ? `${cataloguesCount}/${limits.cataloguesMax}`
     : `${cataloguesCount} (illimité)`
+  const productsLimitDisplay = Number.isFinite(limits.productsMax)
+    ? `${productsCount}/${limits.productsMax}`
+    : `${productsCount} (illimité)`
 
   return (
     <div className={cn("grid gap-4 rounded-2xl border p-5", tone.planCard)}>
@@ -631,6 +642,14 @@ function PlanCard({
         <li className="flex items-center justify-between gap-2">
           <span className="text-white/55">Catalogue</span>
           <strong className="text-white">{cataloguesLimitDisplay}</strong>
+        </li>
+        <li className="flex items-center justify-between gap-2">
+          <span className="text-white/55">Produits boutique</span>
+          <strong className="text-white">{productsLimitDisplay}</strong>
+        </li>
+        <li className="flex items-center justify-between gap-2">
+          <span className="text-white/55">Photos par catalogue</span>
+          <strong className="text-white">{limits.cataloguePhotosMax}</strong>
         </li>
       </ul>
 

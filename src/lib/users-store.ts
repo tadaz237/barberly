@@ -10,6 +10,8 @@ export type PlanLimits = {
   servicesMax: number; // Infinity = illimité
   servicePublishCooldownDays: number;
   cataloguesMax: number;
+  cataloguePhotosMax: number;
+  productsMax: number;
   marketplaceBoost: number; // poids dans le tri (plus haut = plus haut)
 };
 
@@ -18,7 +20,9 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     servicesPerDay: 1,
     servicesMax: 7,
     servicePublishCooldownDays: 2,
-    cataloguesMax: 2,
+    cataloguesMax: 5,
+    cataloguePhotosMax: 5,
+    productsMax: 2,
     marketplaceBoost: 0,
   },
   essential: {
@@ -26,6 +30,8 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     servicesMax: Number.POSITIVE_INFINITY,
     servicePublishCooldownDays: 0,
     cataloguesMax: 10,
+    cataloguePhotosMax: 10,
+    productsMax: 10,
     marketplaceBoost: 1,
   },
   pro: {
@@ -33,6 +39,8 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     servicesMax: Number.POSITIVE_INFINITY,
     servicePublishCooldownDays: 0,
     cataloguesMax: 20,
+    cataloguePhotosMax: 20,
+    productsMax: 20,
     marketplaceBoost: 2,
   },
   premium: {
@@ -40,6 +48,8 @@ export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
     servicesMax: Number.POSITIVE_INFINITY,
     servicePublishCooldownDays: 0,
     cataloguesMax: Number.POSITIVE_INFINITY,
+    cataloguePhotosMax: 30,
+    productsMax: Number.POSITIVE_INFINITY,
     marketplaceBoost: 3,
   },
 };

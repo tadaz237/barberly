@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import { ImageCropModal } from "@/src/components/ui/image-crop-modal";
 
-const MAX_PHOTOS = 4;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
 type Photo = {
@@ -30,9 +29,10 @@ type Submission =
 
 type Props = {
   remainingSlots: number;
+  photoLimit: number;
 };
 
-export function AdminCatalogueForm({ remainingSlots }: Props) {
+export function AdminCatalogueForm({ remainingSlots, photoLimit }: Props) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -153,7 +153,7 @@ export function AdminCatalogueForm({ remainingSlots }: Props) {
     });
   }
 
-  const reachedMax = photos.length >= Math.min(MAX_PHOTOS, remainingSlots + photos.length);
+  const reachedMax = photos.length >= photoLimit;
   const noSlotLeft = remainingSlots <= 0;
 
   return (
@@ -217,7 +217,7 @@ export function AdminCatalogueForm({ remainingSlots }: Props) {
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium text-white/80">
-            Photos ({photos.length}/{MAX_PHOTOS})
+            Photos ({photos.length}/{photoLimit})
           </p>
           <button
             type="button"

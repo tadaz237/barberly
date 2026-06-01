@@ -40,6 +40,8 @@ const PLANS: PlanCardData[] = [
     perks: [
       "3 prestations par jour",
       "10 catalogues maximum",
+      "10 photos par catalogue",
+      "10 produits boutique",
       "Statistiques de base",
       "Support par e-mail",
     ],
@@ -56,6 +58,8 @@ const PLANS: PlanCardData[] = [
     perks: [
       "6 prestations par jour",
       "20 catalogues maximum",
+      "20 photos par catalogue",
+      "20 produits boutique",
       "Boost dans le classement marketplace",
       "Badge Pro visible par les clientes",
       "Support prioritaire",
@@ -73,6 +77,8 @@ const PLANS: PlanCardData[] = [
     perks: [
       "Prestations illimitées",
       "Catalogues illimités",
+      "30 photos par catalogue",
+      "Produits boutique illimités",
       "Top du classement marketplace",
       "Badge Premium dore",
       "Support dedie",
@@ -126,8 +132,9 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
             Boostez votre activité avec le forfait qui vous correspond.
           </h1>
           <p className="text-sm leading-6 text-white/60 sm:text-base">
-            Publiez plus de prestations, créez plus de catalogues, et apparaissez
-            plus haut dans la marketplace. Tarifs mensuels en francs CFA.
+            Publiez plus de prestations, créez plus de catalogues, ajoutez plus
+            de produits boutique, et apparaissez plus haut dans la marketplace.
+            Tarifs mensuels en francs CFA.
           </p>
         </header>
 
@@ -204,6 +211,10 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
         </section>
 
         <section className="rounded-3xl border border-white/10 bg-white/3 p-5 text-center text-xs text-white/45 sm:rounded-[2rem] sm:p-6">
+          <p className="mb-2 text-white/55">
+            Forfait Gratuit : 5 catalogues, 5 photos par catalogue et 2
+            produits boutique.
+          </p>
           <p>
             <Camera className="mr-1 inline-block size-3.5 text-amber-300" />
             Les souscriptions payantes sont temporairement désactivées. Les plans
