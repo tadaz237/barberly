@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { Loader2, MessageCircle, Send } from "lucide-react";
 import type { ConversationItem } from "@/src/lib/conversations-store";
+import { useMessageNotifications } from "@/src/components/messages/message-notifications";
 import { cn } from "@/src/lib/utils";
 
 type Props = {
@@ -21,10 +22,84 @@ export function MessagesPanel({
   const [body, setBody] = useState("");
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
+  const { refreshNotifications } = useMessageNotifications();
   const active = useMemo(
     () => items.find((item) => item.id === activeId) ?? items[0],
     [activeId, items],
   );
+  const unreadTotal = useMemo(
+    () => items.reduce((total, item) => total + item.unreadCount, 0),
+    [items],
+  );
+
+  const refreshConversations = useCallback(async () => {
+    try {
+      const response = await fetch("/api/conversations", { cache: "no-store" });
+      const payload = (await response.json().catch(() => null)) as
+        | { conversations?: ConversationItem[] }
+        | null;
+
+      if (!response.ok || !payload?.conversations) return;
+
+      setItems(payload.conversations);
+      setActiveId((current) => {
+        if (payload.conversations?.some((item) => item.id === current)) {
+          return current;
+        }
+        return payload.conversations?.[0]?.id ?? "";
+      });
+    } catch {
+      // Keep the last rendered messages when a background refresh fails.
+    }
+  }, []);
+
+  useEffect(() => {
+    const initialRefresh = window.setTimeout(() => {
+      void refreshConversations();
+    }, 0);
+    const interval = window.setInterval(refreshConversations, 6_000);
+    const handleFocus = () => void refreshConversations();
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      window.clearTimeout(initialRefresh);
+      window.clearInterval(interval);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [refreshConversations]);
+
+  useEffect(() => {
+    if (!active?.id || active.unreadCount === 0) return;
+
+    let cancelled = false;
+    async function markActiveConversationRead() {
+      try {
+        const response = await fetch(`/api/conversations/${active?.id}/read`, {
+          method: "PATCH",
+          cache: "no-store",
+        });
+        const payload = (await response.json().catch(() => null)) as
+          | { conversation?: ConversationItem }
+          | null;
+
+        if (!cancelled && response.ok && payload?.conversation) {
+          setItems((previous) =>
+            previous.map((item) =>
+              item.id === payload.conversation?.id ? payload.conversation : item,
+            ),
+          );
+          void refreshNotifications({ silent: true });
+        }
+      } catch {
+        // A later refresh will retry the read state.
+      }
+    }
+
+    void markActiveConversationRead();
+    return () => {
+      cancelled = true;
+    };
+  }, [active?.id, active?.unreadCount, refreshNotifications]);
 
   function sendMessage() {
     if (!active || !body.trim()) return;
@@ -53,6 +128,7 @@ export function MessagesPanel({
             item.id === payload.conversation?.id ? payload.conversation : item,
           ),
         );
+        void refreshNotifications({ silent: true });
       } catch {
         setError("Erreur réseau. Réessayez.");
         setBody(nextBody);
@@ -73,9 +149,16 @@ export function MessagesPanel({
     <section className="grid min-h-[560px] overflow-hidden rounded-3xl border border-white/10 bg-zinc-950/80 shadow-2xl backdrop-blur lg:grid-cols-[320px_minmax(0,1fr)]">
       <aside className="border-b border-white/10 lg:border-r lg:border-b-0">
         <div className="border-b border-white/10 px-4 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-pink-200">
-            Conversations
-          </p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-pink-200">
+              Conversations
+            </p>
+            {unreadTotal > 0 ? (
+              <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                {unreadTotal > 99 ? "99+" : unreadTotal}
+              </span>
+            ) : null}
+          </div>
         </div>
         <div className="max-h-80 overflow-y-auto lg:max-h-[620px]">
           {items.map((item) => {
@@ -93,12 +176,21 @@ export function MessagesPanel({
                     : "hover:bg-white/[0.04]",
                 )}
               >
-                <p className="truncate text-sm font-semibold text-white">
-                  {otherName}
-                </p>
-                <p className="truncate text-xs text-white/50">
-                  {item.serviceName}
-                </p>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-white">
+                      {otherName}
+                    </p>
+                    <p className="truncate text-xs text-white/50">
+                      {item.serviceName}
+                    </p>
+                  </div>
+                  {item.unreadCount > 0 ? (
+                    <span className="inline-flex min-w-5 shrink-0 items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold leading-5 text-white">
+                      {item.unreadCount > 99 ? "99+" : item.unreadCount}
+                    </span>
+                  ) : null}
+                </div>
                 <p className="mt-1 truncate text-xs text-white/35">
                   {item.lastMessage?.body ?? "Aucun message."}
                 </p>

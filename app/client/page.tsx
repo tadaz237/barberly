@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { SignOutButton } from "@/src/components/auth/sign-out-button";
 import { ReviewForm } from "@/src/components/client/review-form";
+import { MessagesLinkWithNotifications } from "@/src/components/messages/message-notifications";
 import { auth } from "@/src/lib/auth";
 import { getReservationsForClient } from "@/src/lib/reservations-store";
 import { getUserById } from "@/src/lib/users-store";
@@ -70,13 +71,12 @@ export default async function ClientPage() {
             >
               Marketplace
             </Link>
-            <Link
+            <MessagesLinkWithNotifications
               href="/client/messages"
               className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl bg-pink-400 px-4 text-sm font-semibold text-pink-950 shadow-lg shadow-pink-500/20 transition-colors hover:bg-pink-300"
             >
-              <MessageCircle className="size-4" />
               Messages
-            </Link>
+            </MessagesLinkWithNotifications>
             <SignOutButton />
           </div>
         </header>

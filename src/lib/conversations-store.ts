@@ -6,6 +6,7 @@ export type ConversationMessage = {
   senderName: string;
   body: string;
   createdAt: string;
+  readAt: string | null;
 };
 
 export type ConversationItem = {
@@ -18,8 +19,21 @@ export type ConversationItem = {
   serviceName: string;
   scheduledAt: string;
   updatedAt: string;
+  unreadCount: number;
   lastMessage?: ConversationMessage;
   messages: ConversationMessage[];
+};
+
+export type ConversationNotificationSummary = {
+  unreadTotal: number;
+  latestUnread?: {
+    id: string;
+    conversationId: string;
+    senderName: string;
+    body: string;
+    serviceName: string;
+    createdAt: string;
+  };
 };
 
 function toMessage(row: {
@@ -27,6 +41,7 @@ function toMessage(row: {
   senderId: string;
   body: string;
   createdAt: Date;
+  readAt: Date | null;
   sender: { name: string };
 }): ConversationMessage {
   return {
@@ -35,10 +50,12 @@ function toMessage(row: {
     senderName: row.sender.name,
     body: row.body,
     createdAt: row.createdAt.toISOString(),
+    readAt: row.readAt ? row.readAt.toISOString() : null,
   };
 }
 
-function toConversation(row: {
+function toConversation(
+  row: {
   id: string;
   reservationId: string;
   providerId: string;
@@ -55,10 +72,17 @@ function toConversation(row: {
     senderId: string;
     body: string;
     createdAt: Date;
+    readAt: Date | null;
     sender: { name: string };
   }>;
-}): ConversationItem {
+  },
+  viewerId: string,
+): ConversationItem {
   const messages = row.messages.map(toMessage);
+  const unreadCount = messages.filter(
+    (message) => message.senderId !== viewerId && message.readAt === null,
+  ).length;
+
   return {
     id: row.id,
     reservationId: row.reservationId,
@@ -69,6 +93,7 @@ function toConversation(row: {
     serviceName: row.reservation.service.name,
     scheduledAt: row.reservation.scheduledAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    unreadCount,
     lastMessage: messages[messages.length - 1],
     messages,
   };
@@ -98,7 +123,7 @@ export async function listConversationsForUser(
     include: CONVERSATION_INCLUDE,
   });
 
-  return conversations.map(toConversation);
+  return conversations.map((conversation) => toConversation(conversation, userId));
 }
 
 export async function getConversationForUser(
@@ -113,7 +138,80 @@ export async function getConversationForUser(
     include: CONVERSATION_INCLUDE,
   });
 
-  return conversation ? toConversation(conversation) : null;
+  return conversation ? toConversation(conversation, userId) : null;
+}
+
+export async function markConversationReadForUser(
+  conversationId: string,
+  userId: string,
+): Promise<ConversationItem | null> {
+  const conversation = await prisma.conversation.findFirst({
+    where: {
+      id: conversationId,
+      OR: [{ providerId: userId }, { clientId: userId }],
+    },
+    select: { id: true },
+  });
+
+  if (!conversation) return null;
+
+  await prisma.message.updateMany({
+    where: {
+      conversationId,
+      senderId: { not: userId },
+      readAt: null,
+    },
+    data: { readAt: new Date() },
+  });
+
+  return getConversationForUser(conversationId, userId);
+}
+
+export async function getConversationNotificationSummary(
+  userId: string,
+): Promise<ConversationNotificationSummary> {
+  const unreadWhere = {
+    readAt: null,
+    senderId: { not: userId },
+    conversation: {
+      OR: [{ providerId: userId }, { clientId: userId }],
+    },
+  };
+
+  const [unreadTotal, latestUnread] = await prisma.$transaction([
+    prisma.message.count({ where: unreadWhere }),
+    prisma.message.findFirst({
+      where: unreadWhere,
+      orderBy: { createdAt: "desc" },
+      include: {
+        sender: { select: { name: true } },
+        conversation: {
+          select: {
+            id: true,
+            reservation: {
+              select: {
+                service: { select: { name: true } },
+              },
+            },
+          },
+        },
+      },
+    }),
+  ]);
+
+  return {
+    unreadTotal,
+    latestUnread: latestUnread
+      ? {
+          id: latestUnread.id,
+          conversationId: latestUnread.conversation.id,
+          senderName: latestUnread.sender.name,
+          body: latestUnread.body,
+          serviceName: latestUnread.conversation.reservation.service.name,
+          createdAt: latestUnread.createdAt.toISOString(),
+        }
+      : undefined,
+  };
 }
 
 export async function sendConversationMessage(input: {

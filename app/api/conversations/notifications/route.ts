@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
-import { listConversationsForUser } from "@/src/lib/conversations-store";
+import { getConversationNotificationSummary } from "@/src/lib/conversations-store";
 
 export const runtime = "nodejs";
 
@@ -11,7 +11,9 @@ export async function GET() {
   }
 
   return NextResponse.json(
-    { conversations: await listConversationsForUser(session.user.id) },
+    {
+      notifications: await getConversationNotificationSummary(session.user.id),
+    },
     { headers: { "Cache-Control": "no-store" } },
   );
 }

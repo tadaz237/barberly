@@ -259,6 +259,7 @@ model Message {
   readAt         DateTime?
 
   @@index([conversationId, createdAt])
+  @@index([conversationId, senderId, readAt])
   @@index([senderId])
   @@map("messages")
 }

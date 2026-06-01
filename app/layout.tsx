@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { MessageNotificationsProvider } from "@/src/components/messages/message-notifications";
 import { PwaRegister } from "@/src/components/pwa-register";
 import "./globals.css";
 
@@ -34,8 +35,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
-        <PwaRegister />
-        {children}
+        <MessageNotificationsProvider>
+          <PwaRegister />
+          {children}
+        </MessageNotificationsProvider>
       </body>
     </html>
   );

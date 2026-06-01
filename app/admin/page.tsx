@@ -7,7 +7,6 @@ import {
   Clock4,
   Crown,
   Images,
-  MessageCircle,
   ShieldAlert,
   ShieldCheck,
   ShieldEllipsis,
@@ -24,6 +23,7 @@ import {
 } from "@/src/components/admin/admin-theme"
 import { AdminServicesPanel } from "@/src/components/admin/admin-services-panel"
 import { SignOutButton } from "@/src/components/auth/sign-out-button"
+import { MessagesLinkWithNotifications } from "@/src/components/messages/message-notifications"
 import { PwaInstallButton } from "@/src/components/pwa-install-button"
 import { auth } from "@/src/lib/auth"
 import {
@@ -158,13 +158,12 @@ export default async function AdminPage() {
               <Images className="size-4" />
               Catalogues
             </Link>
-            <Link
+            <MessagesLinkWithNotifications
               href="/admin/messages"
               className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 text-xs font-medium text-white/70 transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 hover:text-white"
             >
-              <MessageCircle className="size-4" />
               <span className="hidden sm:inline">Messages</span>
-            </Link>
+            </MessagesLinkWithNotifications>
             <Link
               href="/admin/profile"
               className={cn(

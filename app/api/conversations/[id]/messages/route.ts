@@ -29,7 +29,10 @@ export async function GET(
     );
   }
 
-  return NextResponse.json({ conversation });
+  return NextResponse.json(
+    { conversation },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 export async function POST(
@@ -76,5 +79,8 @@ export async function POST(
     );
   }
 
-  return NextResponse.json({ conversation, message: "Message envoyé." });
+  return NextResponse.json(
+    { conversation, message: "Message envoyé." },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
