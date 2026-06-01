@@ -29,7 +29,26 @@ type IncomingPayload = {
 
 const IMAGE_DATA_URL_RE =
   /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/;
-const MAX_IMAGE_DATA_URL_LENGTH = 3_000_000;
+const MAX_IMAGE_DATA_URL_LENGTH = 4_000_000;
+const IMAGE_VALIDATION_MESSAGE =
+  "Photo invalide. Formats acceptés : PNG, JPEG, WEBP, GIF — max 4 Mo.";
+const IMAGE_UPLOAD_MESSAGE =
+  "Impossible d'envoyer la photo de la prestation. Reessayez dans un instant.";
+
+class ServiceImageError extends Error {
+  constructor(
+    message: string,
+    public readonly status = 400,
+  ) {
+    super(message);
+    this.name = "ServiceImageError";
+  }
+}
+
+type ResolvedImage = {
+  image: string | null | undefined;
+  uploadedImageUrl?: string;
+};
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
@@ -44,26 +63,47 @@ function isValidImageUrl(value: string) {
   }
 }
 
-async function resolveImage(value: unknown): Promise<string | null | undefined> {
-  if (value === undefined) return undefined;
-  if (value === null || value === "") return null;
+async function cleanupUploadedImage(imageUrl: string | undefined) {
+  if (!imageUrl) return;
+
+  try {
+    await deleteImageFromCloudinary(imageUrl);
+  } catch (error) {
+    console.error("Service image cleanup failed", error);
+  }
+}
+
+async function resolveImage(value: unknown): Promise<ResolvedImage> {
+  if (value === undefined) return { image: undefined };
+  if (value === null || value === "") return { image: null };
 
   if (typeof value !== "string") {
-    throw new Error("Photo invalide.");
+    throw new ServiceImageError(IMAGE_VALIDATION_MESSAGE);
   }
 
-  if (IMAGE_DATA_URL_RE.test(value)) {
+  if (value.startsWith("data:image/")) {
     if (value.length > MAX_IMAGE_DATA_URL_LENGTH) {
-      throw new Error("Photo trop volumineuse.");
+      throw new ServiceImageError(IMAGE_VALIDATION_MESSAGE);
     }
-    return uploadImageToCloudinary(value, "services");
+
+    if (!IMAGE_DATA_URL_RE.test(value)) {
+      throw new ServiceImageError(IMAGE_VALIDATION_MESSAGE);
+    }
+
+    try {
+      const uploadedImageUrl = await uploadImageToCloudinary(value, "services");
+      return { image: uploadedImageUrl, uploadedImageUrl };
+    } catch (error) {
+      console.error("Service image upload failed", error);
+      throw new ServiceImageError(IMAGE_UPLOAD_MESSAGE, 502);
+    }
   }
 
   if (isValidImageUrl(value)) {
-    return value;
+    return { image: value };
   }
 
-  throw new Error("Photo invalide.");
+  throw new ServiceImageError(IMAGE_VALIDATION_MESSAGE);
 }
 
 export async function PATCH(
@@ -146,35 +186,44 @@ export async function PATCH(
     );
   }
 
-  let image: string | null | undefined;
+  let resolvedImage: ResolvedImage;
   try {
-    image = await resolveImage(body.image);
-  } catch {
+    resolvedImage = await resolveImage(body.image);
+  } catch (error) {
+    const imageError =
+      error instanceof ServiceImageError
+        ? error
+        : new ServiceImageError(IMAGE_VALIDATION_MESSAGE);
+
     return NextResponse.json(
-      {
-        message:
-          "Photo invalide. Formats acceptés : PNG, JPEG, WEBP, GIF — max 2 Mo.",
-      },
-      { status: 400 },
+      { message: imageError.message },
+      { status: imageError.status },
     );
   }
 
   const plan = await getUserPlan(session.user.id);
   const featured = Boolean(body.featured) && plan === "premium";
 
-  const service = await updateService(session.user.id, id, {
-    name: textValues.name,
-    category: textValues.category,
-    price,
-    duration,
-    city: textValues.city,
-    neighborhood: textValues.neighborhood,
-    description: textValues.description,
-    image,
-    featured,
-  });
+  let service: Awaited<ReturnType<typeof updateService>>;
+  try {
+    service = await updateService(session.user.id, id, {
+      name: textValues.name,
+      category: textValues.category,
+      price,
+      duration,
+      city: textValues.city,
+      neighborhood: textValues.neighborhood,
+      description: textValues.description,
+      image: resolvedImage.image,
+      featured,
+    });
+  } catch (error) {
+    await cleanupUploadedImage(resolvedImage.uploadedImageUrl);
+    throw error;
+  }
 
   if (!service) {
+    await cleanupUploadedImage(resolvedImage.uploadedImageUrl);
     return NextResponse.json(
       { message: "Prestation introuvable ou non autorisée." },
       { status: 404 },
@@ -182,17 +231,7 @@ export async function PATCH(
   }
 
   if (existingService.image && service.image !== existingService.image) {
-    try {
-      await deleteImageFromCloudinary(existingService.image);
-    } catch {
-      return NextResponse.json(
-        {
-          message:
-            "Prestation mise a jour, mais une ancienne photo n'a pas pu etre retiree completement.",
-        },
-        { status: 502 },
-      );
-    }
+    await cleanupUploadedImage(existingService.image);
   }
 
   return NextResponse.json({

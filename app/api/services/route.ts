@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
-import { uploadImageToCloudinary } from "@/src/lib/cloudinary";
+import {
+  deleteImageFromCloudinary,
+  uploadImageToCloudinary,
+} from "@/src/lib/cloudinary";
 import {
   addService,
   countServicesByOwner,
@@ -39,8 +42,20 @@ function isNonEmptyString(value: unknown): value is string {
 
 const IMAGE_DATA_URL_RE =
   /^data:image\/(png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=]+$/;
-const MAX_IMAGE_DATA_URL_LENGTH = 3_000_000;
+const MAX_IMAGE_DATA_URL_LENGTH = 4_000_000;
+const IMAGE_VALIDATION_MESSAGE =
+  "Photo invalide. Formats acceptés : PNG, JPEG, WEBP, GIF — max 4 Mo.";
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+async function cleanupUploadedImage(imageUrl: string | undefined) {
+  if (!imageUrl) return;
+
+  try {
+    await deleteImageFromCloudinary(imageUrl);
+  } catch (error) {
+    console.error("Service image cleanup failed", error);
+  }
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -204,10 +219,7 @@ export async function POST(request: Request) {
       !IMAGE_DATA_URL_RE.test(body.image)
     ) {
       return NextResponse.json(
-        {
-          message:
-            "Photo invalide. Formats acceptés : PNG, JPEG, WEBP, GIF — max 2 Mo.",
-        },
+        { message: IMAGE_VALIDATION_MESSAGE },
         { status: 400 },
       );
     }
@@ -215,7 +227,7 @@ export async function POST(request: Request) {
       image = await uploadImageToCloudinary(body.image, "services");
     } catch {
       return NextResponse.json(
-        { message: "Impossible d'envoyer la photo du service." },
+        { message: "Impossible d'envoyer la photo de la prestation." },
         { status: 502 },
       );
     }
@@ -225,18 +237,24 @@ export async function POST(request: Request) {
   const featuredRequested = Boolean(body.featured);
   const featured = featuredRequested && plan === "premium";
 
-  const service = await addService({
-    ownerId: session.user.id,
-    name: textValues.name,
-    category: textValues.category,
-    price,
-    duration,
-    city: textValues.city,
-    neighborhood: textValues.neighborhood,
-    description: textValues.description,
-    image,
-    featured,
-  });
+  let service: Awaited<ReturnType<typeof addService>>;
+  try {
+    service = await addService({
+      ownerId: session.user.id,
+      name: textValues.name,
+      category: textValues.category,
+      price,
+      duration,
+      city: textValues.city,
+      neighborhood: textValues.neighborhood,
+      description: textValues.description,
+      image,
+      featured,
+    });
+  } catch (error) {
+    await cleanupUploadedImage(image);
+    throw error;
+  }
 
   return NextResponse.json(
     { service, message: "Service publié avec succès." },

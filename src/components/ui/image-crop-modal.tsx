@@ -5,7 +5,7 @@ import Cropper, { type Area } from "react-easy-crop";
 import { Check, RefreshCcw, X, ZoomIn } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
-const MAX_OUTPUT_DIM = 1400;
+const MAX_OUTPUT_DIM = 1280;
 
 type Props = {
   src: string;
@@ -190,5 +190,5 @@ async function cropToDataUrl(src: string, area: Area): Promise<string> {
     canvas.width,
     canvas.height,
   );
-  return canvas.toDataURL("image/jpeg", 0.88);
+  return canvas.toDataURL("image/jpeg", 0.82);
 }
