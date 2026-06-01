@@ -49,19 +49,16 @@ export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json(
-      { message: "Connectez-vous comme client pour réserver." },
+      { message: "Connectez-vous pour réserver." },
       { status: 401 },
     );
   }
 
   const user = await getUserById(session.user.id);
-  if (!user || !isClientUser(user)) {
+  if (!user) {
     return NextResponse.json(
-      {
-        message:
-          "Les comptes professionnels ne peuvent pas créer une réservation client.",
-      },
-      { status: 403 },
+      { message: "Compte introuvable." },
+      { status: 401 },
     );
   }
 
@@ -115,6 +112,12 @@ export async function POST(request: Request) {
   });
 
   if ("error" in result) {
+    if (result.error === "own_service") {
+      return NextResponse.json(
+        { message: "Vous ne pouvez pas réserver votre propre prestation." },
+        { status: 403 },
+      );
+    }
     if (result.error === "slot_taken") {
       return NextResponse.json(
         { message: "Ce créneau vient d'être pris. Choisissez un autre horaire." },
@@ -139,7 +142,7 @@ export async function POST(request: Request) {
   return NextResponse.json(
     {
       reservation: result.reservation,
-      message: "Demande de réservation envoyée. Le coiffeur va vous répondre.",
+      message: "Demande de réservation envoyée. Le professionnel va vous répondre.",
     },
     { status: 201 },
   );

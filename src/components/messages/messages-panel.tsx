@@ -15,7 +15,6 @@ type Props = {
 export function MessagesPanel({
   currentUserId,
   conversations,
-  viewer,
 }: Props) {
   const [items, setItems] = useState(conversations);
   const [activeId, setActiveId] = useState(conversations[0]?.id ?? "");
@@ -30,6 +29,11 @@ export function MessagesPanel({
   const unreadTotal = useMemo(
     () => items.reduce((total, item) => total + item.unreadCount, 0),
     [items],
+  );
+  const getOtherName = useCallback(
+    (item: ConversationItem) =>
+      item.clientId === currentUserId ? item.providerName : item.clientName,
+    [currentUserId],
   );
 
   const refreshConversations = useCallback(async () => {
@@ -162,8 +166,7 @@ export function MessagesPanel({
         </div>
         <div className="max-h-80 overflow-y-auto lg:max-h-[620px]">
           {items.map((item) => {
-            const otherName =
-              viewer === "client" ? item.providerName : item.clientName;
+            const otherName = getOtherName(item);
             return (
               <button
                 key={item.id}
@@ -204,7 +207,7 @@ export function MessagesPanel({
         <div className="flex min-h-0 flex-col">
           <header className="border-b border-white/10 px-5 py-4">
             <p className="text-sm font-semibold text-white">
-              {viewer === "client" ? active.providerName : active.clientName}
+              {getOtherName(active)}
             </p>
             <p className="text-xs text-white/45">
               {active.serviceName} ·{" "}

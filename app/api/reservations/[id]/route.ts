@@ -6,6 +6,7 @@ import {
   type ReservationStatus,
 } from "@/src/lib/reservations-store";
 import { sendBrowserPushToUser } from "@/src/lib/push-notifications";
+import { getUserById } from "@/src/lib/users-store";
 
 const ALLOWED: ReservationStatus[] = [
   "pending",
@@ -57,12 +58,16 @@ export async function PATCH(
 
   if (
     body.status === "confirmed" &&
+    notificationTarget &&
     notificationTarget?.previousStatus !== "confirmed"
   ) {
+    const clientUser = notificationTarget.clientId
+      ? await getUserById(notificationTarget.clientId)
+      : null;
     await sendBrowserPushToUser(notificationTarget?.clientId, {
       title: "Reservation acceptee",
       body: `Votre reservation pour ${updated.serviceName} a ete acceptee.`,
-      url: "/client",
+      url: clientUser?.role === "client" ? "/client" : "/admin/reservations",
       tag: `reservation-${updated.id}`,
     });
   }

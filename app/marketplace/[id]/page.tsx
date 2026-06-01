@@ -175,10 +175,13 @@ export default async function ServiceDetailPage({
               serviceName={service.name}
               servicePrice={service.price}
               serviceDurationMin={service.duration}
+              isOwnService={
+                Boolean(currentUser?.id) && currentUser?.id === service.ownerId
+              }
               ownerGender={service.ownerGender ?? coiffeur?.gender}
               serviceCategory={service.category}
-              client={
-                currentUser?.role === "client"
+              viewer={
+                currentUser
                   ? {
                       name: currentUser.name,
                       email: currentUser.email,

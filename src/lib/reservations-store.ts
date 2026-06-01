@@ -157,13 +157,14 @@ export async function createReservation(
   input: CreateReservationInput,
 ): Promise<
   | { reservation: ReservationItem }
-  | { error: "service_not_found" | "slot_taken" | "slot_invalid" }
+  | { error: "service_not_found" | "slot_taken" | "slot_invalid" | "own_service" }
 > {
   const service = await prisma.service.findUnique({
     where: { id: input.serviceId },
     select: { id: true, ownerId: true, duration: true },
   });
   if (!service) return { error: "service_not_found" };
+  if (service.ownerId === input.clientId) return { error: "own_service" };
 
   const start = input.scheduledAt;
   const startHour = start.getHours();

@@ -42,7 +42,7 @@ type Props = {
   serviceDurationMin: number;
   ownerGender?: MarketplaceGender;
   serviceCategory?: string;
-  client?: {
+  viewer?: {
     name: string;
     email: string;
     phone?: string;
@@ -62,7 +62,7 @@ export function ReservationModal({
   serviceDurationMin,
   ownerGender,
   serviceCategory,
-  client,
+  viewer,
 }: Props) {
   const mounted = useSyncExternalStore(
     subscribeToClientMounted,
@@ -76,9 +76,9 @@ export function ReservationModal({
   const [slots, setSlots] = useState<string[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [form, setForm] = useState({
-    clientName: client?.name ?? "",
+    clientName: viewer?.name ?? "",
     clientAddress: "",
-    clientPhone: client?.phone ?? "",
+    clientPhone: viewer?.phone ?? "",
     notes: "",
   });
   const [error, setError] = useState<string | null>(null);
@@ -172,9 +172,9 @@ export function ReservationModal({
     setSelectedSlot(null);
     setSlots([]);
     setForm({
-      clientName: client?.name ?? "",
+      clientName: viewer?.name ?? "",
       clientAddress: "",
-      clientPhone: client?.phone ?? "",
+      clientPhone: viewer?.phone ?? "",
       notes: "",
     });
     setError(null);
@@ -222,26 +222,26 @@ export function ReservationModal({
           </button>
         </header>
 
-        {client ? <Stepper step={step} tone={tone} /> : null}
+        {viewer ? <Stepper step={step} tone={tone} /> : null}
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-7">
-          {!client ? (
+          {!viewer ? (
             <div className="space-y-4 text-center">
               <div className={cn("mx-auto inline-flex size-14 items-center justify-center rounded-2xl border", tone.softPanel)}>
                 <UserRound className={cn("size-7", tone.icon)} />
               </div>
               <div className="space-y-2">
                 <h3 className="text-xl font-semibold text-white">
-                  Connectez-vous comme client.
+                  Connectez-vous pour réserver.
                 </h3>
                 <p className="mx-auto max-w-md text-sm leading-6 text-white/60">
-                  Un compte client est nécessaire pour réserver, discuter avec le
-                  professionnel et laisser un avis vérifié après la prestation.
+                  Un compte est nécessaire pour réserver, discuter avec le
+                  professionnel et suivre votre demande.
                 </p>
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
                 <Link
-                  href={`/client-login?callbackUrl=${encodedCallbackUrl}`}
+                  href={`/login?callbackUrl=${encodedCallbackUrl}`}
                   className={cn(
                     "inline-flex h-11 items-center justify-center rounded-2xl text-sm font-semibold",
                     tone.solidButton,
@@ -262,7 +262,7 @@ export function ReservationModal({
             </div>
           ) : null}
 
-          {client && step === "date" ? (
+          {viewer && step === "date" ? (
             <DateStep
               monthCursor={monthCursor}
               setMonthCursor={setMonthCursor}
@@ -279,7 +279,7 @@ export function ReservationModal({
             />
           ) : null}
 
-          {client && step === "slot" ? (
+          {viewer && step === "slot" ? (
             <SlotStep
               date={selectedDate!}
               slots={slots}
@@ -292,7 +292,7 @@ export function ReservationModal({
             />
           ) : null}
 
-          {client && step === "form" ? (
+          {viewer && step === "form" ? (
             <form onSubmit={handleSubmit} className="space-y-4">
               <button
                 type="button"
@@ -407,7 +407,7 @@ export function ReservationModal({
             </form>
           ) : null}
 
-          {client && step === "done" ? (
+          {viewer && step === "done" ? (
             <div className="space-y-4 text-center">
               <div className="mx-auto inline-flex size-14 items-center justify-center rounded-2xl bg-emerald-500/15 ring-1 ring-emerald-500/40">
                 <CheckCircle2 className="size-7 text-emerald-300" />

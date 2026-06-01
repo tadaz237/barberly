@@ -15,9 +15,10 @@ type Props = {
   serviceName: string;
   servicePrice: number;
   serviceDurationMin: number;
+  isOwnService?: boolean;
   ownerGender?: MarketplaceGender;
   serviceCategory?: string;
-  client?: {
+  viewer?: {
     name: string;
     email: string;
     phone?: string;
@@ -29,9 +30,10 @@ export function ReservationCta({
   serviceName,
   servicePrice,
   serviceDurationMin,
+  isOwnService = false,
   ownerGender,
   serviceCategory,
-  client,
+  viewer,
 }: Props) {
   const [open, setOpen] = useState(false);
   const tone = MARKETPLACE_TONES[
@@ -42,15 +44,25 @@ export function ReservationCta({
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          if (!isOwnService) setOpen(true);
+        }}
+        disabled={isOwnService}
         className={cn(
           "inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-sm font-semibold shadow-lg transition-colors",
-          tone.solidButton,
+          isOwnService
+            ? "cursor-not-allowed bg-white/10 text-white/45 shadow-none"
+            : tone.solidButton,
         )}
       >
         <CalendarCheck className="size-4" />
-        Demander une réservation
+        {isOwnService ? "Votre propre prestation" : "Demander une réservation"}
       </button>
+      {isOwnService ? (
+        <p className="mt-2 text-center text-xs text-white/45">
+          Vous ne pouvez pas réserver une prestation que vous avez publiée.
+        </p>
+      ) : null}
       <ReservationModal
         open={open}
         onClose={() => setOpen(false)}
@@ -60,7 +72,7 @@ export function ReservationCta({
         serviceDurationMin={serviceDurationMin}
         ownerGender={ownerGender}
         serviceCategory={serviceCategory}
-        client={client}
+        viewer={viewer}
       />
     </>
   );
