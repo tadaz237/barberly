@@ -195,7 +195,7 @@ export default async function AdminPage() {
             tone.heroCard,
           )}
         >
-          <div className="space-y-4">
+          <div className="space-y-4 lg:self-start">
             <span
               className={cn(
                 "inline-flex w-fit rounded-full border px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] shadow-lg sm:text-xs sm:tracking-[0.2em]",
