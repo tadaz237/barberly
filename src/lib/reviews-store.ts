@@ -1,4 +1,17 @@
 import { prisma } from "@/src/lib/prisma";
+import type { Gender } from "@/src/lib/users-store";
+
+export type TopProvider = {
+  providerId: string;
+  name: string;
+  image?: string;
+  gender?: Gender;
+  city?: string;
+  category?: string;
+  serviceId: string;
+  rating: number;
+  reviewCount: number;
+};
 
 export type ReviewItem = {
   id: string;
@@ -48,6 +61,66 @@ export async function getProviderReviewSummary(
     average: result._avg.rating ?? 0,
     count: result._count.id,
   };
+}
+
+export async function getTopRatedProviders(limit = 6): Promise<TopProvider[]> {
+  const grouped = await prisma.review.groupBy({
+    by: ["providerId"],
+    where: { status: "published" },
+    _avg: { rating: true },
+    _count: { _all: true },
+  });
+
+  const ranked = grouped
+    .map((row) => ({
+      providerId: row.providerId,
+      rating: row._avg.rating ?? 0,
+      reviewCount: row._count._all,
+    }))
+    .filter((row) => row.reviewCount > 0)
+    .sort((a, b) => b.rating - a.rating || b.reviewCount - a.reviewCount)
+    .slice(0, limit);
+
+  if (ranked.length === 0) return [];
+
+  const providers = await prisma.user.findMany({
+    where: {
+      id: { in: ranked.map((row) => row.providerId) },
+      role: "professional",
+    },
+    select: {
+      id: true,
+      name: true,
+      image: true,
+      gender: true,
+      services: {
+        take: 1,
+        orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
+        select: { id: true, city: true, category: true },
+      },
+    },
+  });
+
+  const byId = new Map(providers.map((provider) => [provider.id, provider]));
+
+  return ranked
+    .map((row): TopProvider | null => {
+      const provider = byId.get(row.providerId);
+      const service = provider?.services[0];
+      if (!provider || !service) return null;
+      return {
+        providerId: row.providerId,
+        name: provider.name,
+        image: provider.image ?? undefined,
+        gender: (provider.gender ?? undefined) as Gender | undefined,
+        city: service.city,
+        category: service.category,
+        serviceId: service.id,
+        rating: row.rating,
+        reviewCount: row.reviewCount,
+      };
+    })
+    .filter((provider): provider is TopProvider => provider !== null);
 }
 
 export async function getProviderReviews(

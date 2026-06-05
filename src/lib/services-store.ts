@@ -20,6 +20,8 @@ export type ServiceItem = {
   ownerPlan?: Plan;
   ownerKycVerified?: boolean;
   ownerGender?: Gender;
+  rating?: number;
+  reviewCount?: number;
 };
 
 export type CreateServiceInput = {
@@ -115,18 +117,39 @@ function toOwnerMeta(owner: ServiceOwnerMeta | undefined) {
 }
 
 export async function getServices(): Promise<ServiceItem[]> {
-  const services = await prisma.service.findMany({
-    orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
-    include: {
-      owner: { select: SERVICE_OWNER_SELECT },
-    },
-  });
+  const [services, ratingRows] = await Promise.all([
+    prisma.service.findMany({
+      orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
+      include: {
+        owner: { select: SERVICE_OWNER_SELECT },
+      },
+    }),
+    prisma.review.groupBy({
+      by: ["providerId"],
+      where: { status: "published" },
+      _avg: { rating: true },
+      _count: { _all: true },
+    }),
+  ]);
+
+  const ratingByProvider = new Map(
+    ratingRows.map((row) => [
+      row.providerId,
+      { average: row._avg.rating ?? 0, count: row._count._all },
+    ]),
+  );
 
   return services
     .map((s) => {
       const ownerMeta = toOwnerMeta(s.owner);
+      const service = toServiceItem(s, ownerMeta);
+      const ownerRating = s.ownerId ? ratingByProvider.get(s.ownerId) : undefined;
+      if (ownerRating && ownerRating.count > 0) {
+        service.rating = ownerRating.average;
+        service.reviewCount = ownerRating.count;
+      }
       return {
-        service: toServiceItem(s, ownerMeta),
+        service,
         boost: ownerMeta ? PLAN_LIMITS[ownerMeta.plan].marketplaceBoost : 0,
       };
     })

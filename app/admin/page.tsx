@@ -21,6 +21,7 @@ import {
   type AdminToneKey,
 } from "@/src/components/admin/admin-theme"
 import { AdminServicesPanel } from "@/src/components/admin/admin-services-panel"
+import { KycVerifiedNotice } from "@/src/components/admin/kyc-verified-notice"
 import { SignOutButton } from "@/src/components/auth/sign-out-button"
 import { MessagesLinkWithNotifications } from "@/src/components/messages/message-notifications"
 import { QuickAccessButton } from "@/src/components/quick-access-button"
@@ -187,7 +188,12 @@ export default async function AdminPage() {
       <div aria-hidden className="h-36 sm:h-24 lg:h-[4.5rem]" />
 
       <section className="relative mx-auto flex w-full max-w-7xl flex-col gap-5 px-4 py-5 sm:gap-6 sm:px-6 sm:py-8 lg:px-8 lg:py-10">
-        <KycBanner status={status} submission={submission} toneKey={toneKey} />
+        <KycBanner
+          status={status}
+          submission={submission}
+          toneKey={toneKey}
+          userId={user.id}
+        />
 
         <div
           className={cn(
@@ -281,10 +287,12 @@ function KycBanner({
   status,
   submission,
   toneKey,
+  userId,
 }: {
   status: KycStatus
   submission: KycSubmission | null
   toneKey: AdminToneKey
+  userId: string
 }) {
   const accentTone = toneKey === "female" ? "pink" : "amber"
 
@@ -320,11 +328,13 @@ function KycBanner({
 
   if (status === "verified") {
     return (
-      <BannerShell tone="emerald" Icon={CheckCircle2} eyebrow="Profil vérifié">
-        <h2 className="text-base font-semibold sm:text-lg">
-          Votre KYC est validé. Vous pouvez publier librement.
-        </h2>
-      </BannerShell>
+      <KycVerifiedNotice userId={userId}>
+        <BannerShell tone="emerald" Icon={CheckCircle2} eyebrow="Profil vérifié">
+          <h2 className="text-base font-semibold sm:text-lg">
+            Votre KYC est validé. Vous pouvez publier librement.
+          </h2>
+        </BannerShell>
+      </KycVerifiedNotice>
     )
   }
 

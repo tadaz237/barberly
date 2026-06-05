@@ -29,12 +29,18 @@ type ServicesResponse = {
   services: ServiceItem[];
 };
 
-type SortKey = "featured" | "price-asc" | "price-desc" | "duration-asc";
+type SortKey =
+  | "featured"
+  | "rating-desc"
+  | "price-asc"
+  | "price-desc"
+  | "duration-asc";
 type NearbySortKey = SortKey | "distance";
 type UserLocation = { latitude: number; longitude: number };
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "featured", label: "Recommandés" },
+  { value: "rating-desc", label: "Mieux notés" },
   { value: "price-asc", label: "Prix croissant" },
   { value: "price-desc", label: "Prix décroissant" },
   { value: "duration-asc", label: "Durée courte" },
@@ -206,6 +212,13 @@ export function ServicesShowcase() {
           const distanceA = distanceByServiceId.get(a.id) ?? Number.POSITIVE_INFINITY;
           const distanceB = distanceByServiceId.get(b.id) ?? Number.POSITIVE_INFINITY;
           return distanceA - distanceB;
+        });
+      case "rating-desc":
+        return [...result].sort((a, b) => {
+          const ratingA = a.rating ?? 0;
+          const ratingB = b.rating ?? 0;
+          if (ratingB !== ratingA) return ratingB - ratingA;
+          return (b.reviewCount ?? 0) - (a.reviewCount ?? 0);
         });
       case "price-asc":
         return [...result].sort((a, b) => a.price - b.price);
@@ -727,6 +740,13 @@ function ServiceCard({
               <Clock3 className={cn("size-3.5", tone.icon)} />
               {service.duration} min
             </span>
+            {service.reviewCount && service.rating ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400/10 px-2 py-1 text-amber-100">
+                <Star className="size-3.5 fill-current text-amber-300" />
+                {service.rating.toFixed(1).replace(".", ",")}
+                <span className="text-amber-100/60">({service.reviewCount})</span>
+              </span>
+            ) : null}
           </div>
 
           <div className="flex items-center justify-between gap-2 border-t border-white/10 pt-3">
