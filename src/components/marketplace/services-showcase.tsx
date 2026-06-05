@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   ChevronDown,
+  ChevronRight,
   Clock3,
   Crown,
   LocateFixed,
@@ -15,19 +16,25 @@ import {
   Sparkles,
   Star,
   TrendingUp,
+  Trophy,
+  UserRound,
   X,
 } from "lucide-react";
 import type { ServiceItem } from "@/src/lib/services-store";
+import type { TopProvider } from "@/src/lib/reviews-store";
 import { ImageLightbox } from "@/src/components/ui/image-lightbox";
 import { cn } from "@/src/lib/utils";
 import {
   MARKETPLACE_TONES,
+  getMarketplaceRoleLabel,
   getMarketplaceToneKey,
 } from "@/src/components/marketplace/marketplace-theme";
 
 type ServicesResponse = {
   services: ServiceItem[];
 };
+
+type Audience = "all" | "female" | "male" | "best-female" | "best-male";
 
 type SortKey =
   | "featured"
@@ -103,13 +110,17 @@ function formatDistance(value: number) {
   return `${Math.round(value)} km`;
 }
 
-export function ServicesShowcase() {
+export function ServicesShowcase({
+  topProviders = [],
+}: {
+  topProviders?: TopProvider[];
+}) {
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("all");
-  const [activeGender, setActiveGender] = useState<"all" | "male" | "female">("all");
+  const [audience, setAudience] = useState<Audience>("all");
   const [sort, setSort] = useState<NearbySortKey>("featured");
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [nearbyEnabled, setNearbyEnabled] = useState(false);
@@ -195,8 +206,8 @@ export function ServicesShowcase() {
       result = result.filter((s) => s.category === activeCategory);
     }
 
-    if (activeGender !== "all") {
-      result = result.filter((s) => s.ownerGender === activeGender);
+    if (audience === "male" || audience === "female") {
+      result = result.filter((s) => s.ownerGender === audience);
     }
 
     if (nearbyEnabled && userLocation) {
@@ -236,7 +247,7 @@ export function ServicesShowcase() {
     services,
     query,
     activeCategory,
-    activeGender,
+    audience,
     nearbyEnabled,
     userLocation,
     distanceByServiceId,
@@ -244,16 +255,35 @@ export function ServicesShowcase() {
     sort,
   ]);
 
+  const isProviderView = audience === "best-female" || audience === "best-male";
+
+  const providerResults = useMemo(() => {
+    if (!isProviderView) return [];
+    const wantTone = audience === "best-male" ? "male" : "female";
+    let list = topProviders.filter(
+      (p) => getMarketplaceToneKey(p.gender, p.category) === wantTone,
+    );
+    if (query.trim()) {
+      const q = query.trim().toLowerCase();
+      list = list.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          (p.city ?? "").toLowerCase().includes(q),
+      );
+    }
+    return list;
+  }, [isProviderView, audience, topProviders, query]);
+
   const hasFilter =
     query.trim().length > 0 ||
     activeCategory !== "all" ||
-    activeGender !== "all" ||
+    audience !== "all" ||
     nearbyEnabled;
 
   function resetFilters() {
     setQuery("");
     setActiveCategory("all");
-    setActiveGender("all");
+    setAudience("all");
     setNearbyEnabled(false);
     setSort("featured");
   }
@@ -349,8 +379,8 @@ export function ServicesShowcase() {
         categories={categories}
         activeCategory={activeCategory}
         onCategoryChange={setActiveCategory}
-        activeGender={activeGender}
-        onGenderChange={setActiveGender}
+        audience={audience}
+        onAudienceChange={setAudience}
         sort={sort}
         onSortChange={setSort}
         nearbyEnabled={nearbyEnabled}
@@ -362,7 +392,9 @@ export function ServicesShowcase() {
           <p className="text-sm text-white/60">
             {loading
               ? "Chargement…"
-              : `${filtered.length} prestation${filtered.length > 1 ? "s" : ""} ${filtered.length > 1 ? "trouvées" : "trouvée"}`}
+              : isProviderView
+                ? `${providerResults.length} ${audience === "best-male" ? "coiffeur" : "coiffeuse"}${providerResults.length > 1 ? "s" : ""} ${providerResults.length > 1 ? "classés" : "classé"}`
+                : `${filtered.length} prestation${filtered.length > 1 ? "s" : ""} ${filtered.length > 1 ? "trouvées" : "trouvée"}`}
           </p>
           {hasFilter && !loading ? (
             <button
@@ -380,6 +412,23 @@ export function ServicesShowcase() {
           <SkeletonGrid />
         ) : error ? (
           <ErrorBox message={error} onRetry={loadServices} />
+        ) : isProviderView ? (
+          providerResults.length === 0 ? (
+            <ProviderEmptyState
+              audience={audience}
+              onReset={resetFilters}
+            />
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {providerResults.map((provider, index) => (
+                <ProviderCard
+                  key={provider.providerId}
+                  provider={provider}
+                  rank={index + 1}
+                />
+              ))}
+            </div>
+          )
         ) : filtered.length === 0 ? (
           <EmptyState hasFilter={hasFilter} onReset={resetFilters} />
         ) : (
@@ -512,8 +561,8 @@ function Filters({
   categories,
   activeCategory,
   onCategoryChange,
-  activeGender,
-  onGenderChange,
+  audience,
+  onAudienceChange,
   sort,
   onSortChange,
   nearbyEnabled,
@@ -522,8 +571,8 @@ function Filters({
   categories: string[];
   activeCategory: string;
   onCategoryChange: (c: string) => void;
-  activeGender: "all" | "male" | "female";
-  onGenderChange: (g: "all" | "male" | "female") => void;
+  audience: Audience;
+  onAudienceChange: (a: Audience) => void;
   sort: NearbySortKey;
   onSortChange: (s: NearbySortKey) => void;
   nearbyEnabled: boolean;
@@ -533,6 +582,7 @@ function Filters({
     nearbyEnabled && hasLocation
       ? [{ value: "distance", label: "Plus proches" }, ...SORT_OPTIONS]
       : SORT_OPTIONS;
+  const providerView = audience === "best-female" || audience === "best-male";
 
   return (
     <div className="rounded-3xl border border-white/10 bg-zinc-950/70 p-4 shadow-[0_16px_50px_-30px_rgba(0,0,0,0.9)] backdrop-blur sm:p-5">
@@ -543,60 +593,77 @@ function Filters({
           </span>
           <GenderChip
             label="Tous"
-            active={activeGender === "all"}
+            active={audience === "all"}
             tone="neutral"
-            onClick={() => onGenderChange("all")}
+            onClick={() => onAudienceChange("all")}
           />
           <GenderChip
             label="Femme"
-            active={activeGender === "female"}
+            active={audience === "female"}
             tone="pink"
-            onClick={() => onGenderChange("female")}
+            onClick={() => onAudienceChange("female")}
           />
           <GenderChip
             label="Homme"
-            active={activeGender === "male"}
+            active={audience === "male"}
             tone="amber"
-            onClick={() => onGenderChange("male")}
+            onClick={() => onAudienceChange("male")}
+          />
+          <span aria-hidden className="mx-1 h-5 w-px bg-white/10" />
+          <GenderChip
+            label="Meilleures coiffeuses"
+            active={audience === "best-female"}
+            tone="pink"
+            icon={<Trophy className="size-3.5" />}
+            onClick={() => onAudienceChange("best-female")}
+          />
+          <GenderChip
+            label="Meilleurs coiffeurs"
+            active={audience === "best-male"}
+            tone="amber"
+            icon={<Trophy className="size-3.5" />}
+            onClick={() => onAudienceChange("best-male")}
           />
         </div>
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          {categories.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {categories.map((c) => (
-                <CategoryChip
-                  key={c}
-                  label={c}
-                  active={activeCategory === c}
-                  onClick={() => onCategoryChange(c)}
-                />
-              ))}
-            </div>
-          ) : null}
+        {providerView ? null : (
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            {categories.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {categories.map((c) => (
+                  <CategoryChip
+                    key={c}
+                    label={c}
+                    active={activeCategory === c}
+                    onClick={() => onCategoryChange(c)}
+                  />
+                ))}
+              </div>
+            ) : null}
 
-          <div className="relative shrink-0">
-            <label htmlFor="marketplace-sort" className="sr-only">
-              Trier
-            </label>
-            <select
-              id="marketplace-sort"
-              value={sort}
-              onChange={(e) => onSortChange(e.target.value as NearbySortKey)}
-              className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-white/15 bg-white/5 pr-9 pl-4 text-sm font-medium text-white shadow-inner shadow-black/20 backdrop-blur transition-colors focus:border-amber-400/40 focus:outline-none focus:ring-2 focus:ring-pink-400/20 sm:w-auto"
-            >
-              {sortOptions.map((opt) => (
-                <option key={opt.value} value={opt.value} className="bg-zinc-900">
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown
-              aria-hidden
-              className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white/40"
-            />
+            <div className="relative shrink-0">
+              <label htmlFor="marketplace-sort" className="sr-only">
+                Trier
+              </label>
+              <select
+                id="marketplace-sort"
+                value={sort}
+                onChange={(e) => onSortChange(e.target.value as NearbySortKey)}
+                className="h-10 w-full cursor-pointer appearance-none rounded-xl border border-white/15 bg-white/5 pr-9 pl-4 text-sm font-medium text-white shadow-inner shadow-black/20 backdrop-blur transition-colors focus:border-amber-400/40 focus:outline-none focus:ring-2 focus:ring-pink-400/20 sm:w-auto"
+              >
+                {sortOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value} className="bg-zinc-900">
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                aria-hidden
+                className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-white/40"
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -606,11 +673,13 @@ function GenderChip({
   label,
   active,
   tone,
+  icon,
   onClick,
 }: {
   label: string;
   active: boolean;
   tone: "neutral" | "pink" | "amber";
+  icon?: React.ReactNode;
   onClick: () => void;
 }) {
   const palette =
@@ -626,8 +695,9 @@ function GenderChip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all ${palette}`}
+      className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all ${palette}`}
     >
+      {icon}
       {label}
     </button>
   );
@@ -854,6 +924,106 @@ function EmptyState({
           Réinitialiser les filtres
         </button>
       ) : null}
+    </div>
+  );
+}
+
+function ProviderCard({
+  provider,
+  rank,
+}: {
+  provider: TopProvider;
+  rank: number;
+}) {
+  const toneKey = getMarketplaceToneKey(provider.gender, provider.category);
+  const tone = MARKETPLACE_TONES[toneKey];
+  const roleLabel = getMarketplaceRoleLabel(toneKey);
+
+  return (
+    <Link
+      href={`/marketplace/${provider.serviceId}`}
+      className={cn(
+        "group/provider relative flex items-center gap-4 overflow-hidden rounded-3xl border border-white/10 bg-linear-to-br from-zinc-800/60 via-zinc-900/70 to-zinc-950/90 p-4 shadow-[0_10px_40px_-12px_rgba(0,0,0,0.7),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1",
+        tone.cardHover,
+      )}
+    >
+      <span
+        aria-hidden
+        className="absolute top-3 right-3 text-3xl font-bold leading-none text-white/5"
+      >
+        #{rank}
+      </span>
+
+      <span
+        className={cn(
+          "relative flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border",
+          tone.avatar,
+        )}
+      >
+        {provider.image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={provider.image} alt="" className="size-full object-cover" />
+        ) : (
+          <UserRound className={cn("size-7", tone.icon)} />
+        )}
+      </span>
+
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <p className="truncate text-base font-semibold tracking-tight text-white">
+          {provider.name}
+        </p>
+        <p className={cn("text-xs font-medium capitalize", tone.textSoft)}>
+          {roleLabel}
+          {provider.city ? (
+            <span className="text-white/40"> · {provider.city}</span>
+          ) : null}
+        </p>
+        <div className="flex items-center gap-2 text-xs">
+          <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/10 px-2 py-1 text-amber-100">
+            <Star className="size-3.5 fill-current text-amber-300" />
+            <strong className="font-semibold">
+              {provider.rating.toFixed(1).replace(".", ",")}
+            </strong>
+            <span className="text-amber-100/60">({provider.reviewCount})</span>
+          </span>
+          <span className="inline-flex items-center gap-0.5 text-white/40 transition-colors group-hover/provider:text-white/70">
+            Voir le profil
+            <ChevronRight className="size-3.5" />
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function ProviderEmptyState({
+  audience,
+  onReset,
+}: {
+  audience: Audience;
+  onReset: () => void;
+}) {
+  const label = audience === "best-male" ? "coiffeur" : "coiffeuse";
+  return (
+    <div className="rounded-3xl border border-dashed border-white/15 bg-white/3 p-10 text-center backdrop-blur">
+      <div className="mx-auto inline-flex size-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+        <Trophy className="size-5 text-white/50" />
+      </div>
+      <p className="mt-4 text-base font-medium text-white/85">
+        Aucun {label} noté pour l&apos;instant.
+      </p>
+      <p className="mx-auto mt-2 max-w-md text-sm text-white/50">
+        Le classement apparaîtra dès que la clientèle aura laissé des avis après
+        ses réservations.
+      </p>
+      <button
+        type="button"
+        onClick={onReset}
+        className="mt-5 inline-flex items-center gap-2 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-2 text-xs font-semibold text-amber-200 hover:bg-amber-400/20"
+      >
+        <X className="size-3.5" />
+        Revenir aux prestations
+      </button>
     </div>
   );
 }

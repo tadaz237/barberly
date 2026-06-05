@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, UserRound } from "lucide-react";
 import { ServicesShowcase } from "@/src/components/marketplace/services-showcase";
-import { TopRatedProviders } from "@/src/components/marketplace/top-rated-providers";
 import { auth } from "@/src/lib/auth";
 import { getTopRatedProviders } from "@/src/lib/reviews-store";
 import { getUserById } from "@/src/lib/users-store";
@@ -11,7 +10,7 @@ export default async function MarketplacePage() {
   const session = await auth();
   const [user, topProviders] = await Promise.all([
     session?.user?.id ? getUserById(session.user.id) : Promise.resolve(null),
-    getTopRatedProviders(),
+    getTopRatedProviders(50),
   ]);
 
   return (
@@ -72,9 +71,8 @@ export default async function MarketplacePage() {
         </div>
       </header>
 
-      <div className="relative mx-auto w-full max-w-7xl space-y-8 px-4 py-6 sm:space-y-12 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
-        <TopRatedProviders providers={topProviders} />
-        <ServicesShowcase />
+      <div className="relative mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
+        <ServicesShowcase topProviders={topProviders} />
       </div>
     </main>
   );
