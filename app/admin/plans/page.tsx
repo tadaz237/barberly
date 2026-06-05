@@ -212,8 +212,8 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
 
         <section className="rounded-3xl border border-white/10 bg-white/3 p-5 text-center text-xs text-white/45 sm:rounded-[2rem] sm:p-6">
           <p className="mb-2 text-white/55">
-            Forfait Gratuit : 5 catalogues, 5 photos par catalogue et 2
-            produits boutique.
+            Forfait Gratuit : 10 prestations maximum, 2 publications par jour,
+            5 catalogues, 5 photos par catalogue et 2 produits boutique.
           </p>
           <p>
             <Camera className="mr-1 inline-block size-3.5 text-amber-300" />

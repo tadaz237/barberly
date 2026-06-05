@@ -64,8 +64,7 @@ const initialValues: ServiceFormValues = {
 }
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024
-const FREE_SERVICES_MAX = 7
-const FREE_COOLDOWN_MS = 2 * 24 * 60 * 60 * 1000
+const FREE_SERVICES_MAX = 10
 const CATEGORY_SUGGESTIONS = [
   "Tresses & protectrices",
   "Braids / Knotless",
@@ -177,7 +176,6 @@ export function AdminServiceForm({
   onServiceCreated,
   plan = "free",
   servicesCount = 0,
-  latestServiceCreatedAt,
   rulesLoading = false,
 }: Props) {
   const [values, setValues] = useState<ServiceFormValues>(initialValues)
@@ -202,18 +200,10 @@ export function AdminServiceForm({
     }
     if (plan !== "free") return ""
     if (servicesCount >= FREE_SERVICES_MAX) {
-      return "Votre forfait gratuit autorise 7 prestations maximum. Vous pouvez modifier ou supprimer une prestation existante."
+      return "Votre forfait gratuit autorise 10 prestations maximum. Vous pouvez modifier ou supprimer une prestation existante."
     }
-    if (!latestServiceCreatedAt) return ""
-
-    const latestTime = new Date(latestServiceCreatedAt).getTime()
-    if (!Number.isFinite(latestTime)) return ""
-
-    const nextAllowedAt = new Date(latestTime + FREE_COOLDOWN_MS)
-    if (Date.now() >= nextAllowedAt.getTime()) return ""
-
-    return `Le forfait gratuit permet de publier une prestation tous les 2 jours. Prochaine publication possible le ${nextAllowedAt.toLocaleDateString("fr-FR")} à ${nextAllowedAt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}.`
-  }, [latestServiceCreatedAt, plan, rulesLoading, servicesCount])
+    return ""
+  }, [plan, rulesLoading, servicesCount])
 
   const isDisabled = useMemo(() => {
     return (
@@ -626,7 +616,7 @@ export function AdminServiceForm({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-muted-foreground">
               {plan === "free" ? (
-                "Gratuit : 7 prestations maximum, modification ou suppression possible."
+                "Gratuit : 10 prestations maximum, 2 publications par jour, modification ou suppression possible."
               ) : (
                 <>
                   Votre prestation sera publiée sur la marketplace.

@@ -17,9 +17,9 @@ export type PlanLimits = {
 
 export const PLAN_LIMITS: Record<Plan, PlanLimits> = {
   free: {
-    servicesPerDay: 1,
-    servicesMax: 7,
-    servicePublishCooldownDays: 2,
+    servicesPerDay: 2,
+    servicesMax: 10,
+    servicePublishCooldownDays: 0,
     cataloguesMax: 5,
     cataloguePhotosMax: 5,
     productsMax: 2,

@@ -107,8 +107,8 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         message:
-          limits.servicesMax === 7
-            ? "Votre forfait gratuit autorise 7 prestations maximum. Vous pouvez modifier ou supprimer une prestation existante."
+          limits.servicesMax === 10
+            ? "Votre forfait gratuit autorise 10 prestations maximum. Vous pouvez modifier ou supprimer une prestation existante."
             : `Limite atteinte : ${limits.servicesMax} prestations maximum avec votre forfait actuel.`,
       },
       { status: 429 },

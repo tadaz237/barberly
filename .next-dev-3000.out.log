@@ -10,3 +10,21 @@
 Creating turbopack project { dir: 'G:\\jeux\\test2\\test2', testMode: true }
 
  GET /marketplace 200 in 1431ms (next.js: 486ms, application-code: 944ms)
+✓ Compiled in 410ms
+✓ Compiled in 402ms
+✓ Compiled in 365ms
+✓ Compiled in 228ms
+ GET /sign-up 404 in 1182ms (next.js: 677ms, application-code: 504ms)
+ GET / 200 in 873ms (next.js: 307ms, application-code: 566ms)
+ GET /sign-up 404 in 157ms (next.js: 12ms, application-code: 145ms)
+ GET /invitation 404 in 183ms (next.js: 19ms, application-code: 164ms)
+○ Compiling /sign-in ...
+ GET /sign-in 307 in 6.9s (next.js: 6.5s, application-code: 410ms)
+ GET /sign-in 307 in 276ms (next.js: 8ms, application-code: 268ms)
+ HEAD / 200 in 539ms (next.js: 115ms, application-code: 424ms)
+ GET /sign-up 404 in 352ms (next.js: 41ms, application-code: 312ms)
+ GET /sign-up 404 in 279ms (next.js: 46ms, application-code: 233ms)
+ GET /manifest.webmanifest 200 in 1151ms (next.js: 1016ms, application-code: 135ms)
+ GET /marketplace 200 in 2.2s (next.js: 1167ms, application-code: 1044ms)
+ GET / 200 in 2.2s (next.js: 60ms, application-code: 2.1s)
+ GET /icon 404 in 2.2s (next.js: 286ms, application-code: 1929ms)
