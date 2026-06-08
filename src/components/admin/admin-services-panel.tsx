@@ -12,7 +12,10 @@ import {
 } from "react"
 import { Camera, Crown, Edit3, ImageIcon, Loader2, Trash2, X } from "lucide-react"
 
-import { AdminServiceForm } from "@/src/components/admin/admin-service-form"
+import {
+  AdminServiceForm,
+  SERVICE_CATEGORIES,
+} from "@/src/components/admin/admin-service-form"
 import {
   MARKETPLACE_TONES,
   getMarketplaceRoleLabel,
@@ -578,13 +581,31 @@ function ServiceEditDialog({
               </ServiceField>
 
               <ServiceField label="Catégorie" htmlFor="edit-service-category">
-                <Input
+                <div
                   id="edit-service-category"
-                  value={values.category}
-                  onChange={(event) =>
-                    updateField("category", event.target.value)
-                  }
-                />
+                  role="group"
+                  aria-label="Catégorie"
+                  className="grid grid-cols-2 gap-2"
+                >
+                  {SERVICE_CATEGORIES.map((category) => {
+                    const active = values.category === category
+                    return (
+                      <button
+                        key={category}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => updateField("category", category)}
+                        className={`rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
+                          active
+                            ? "border-amber-400/60 bg-amber-400/15 text-amber-200"
+                            : "border-white/10 bg-white/5 text-muted-foreground hover:border-amber-300/40 hover:text-foreground"
+                        }`}
+                      >
+                        {category}
+                      </button>
+                    )
+                  })}
+                </div>
               </ServiceField>
 
               <ServiceField label="Ville" htmlFor="edit-service-city">

@@ -7,7 +7,6 @@ import {
   type ChangeEvent,
   type FormEvent,
   type ReactNode,
-  type RefObject,
 } from "react"
 import { Camera, Crown, ImageIcon, Loader2, LocateFixed, MapPin, X } from "lucide-react"
 
@@ -65,20 +64,7 @@ const initialValues: ServiceFormValues = {
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024
 const FREE_SERVICES_MAX = 10
-const CATEGORY_SUGGESTIONS = [
-  "Tresses & protectrices",
-  "Braids / Knotless",
-  "Locks",
-  "Barbier",
-  "Coupe homme",
-  "Coupe femme",
-  "Brushing",
-  "Coloration",
-  "Lissage & soins",
-  "Extensions / mèches",
-  "Mariage / événement",
-  "Enfants",
-]
+export const SERVICE_CATEGORIES = ["Coiffure femme", "Coiffure homme"] as const
 const CITY_SUGGESTIONS = [
   "Abidjan",
   "Bouake",
@@ -184,12 +170,10 @@ export function AdminServiceForm({
   const [submitting, setSubmitting] = useState(false)
   const [successMessage, setSuccessMessage] = useState("")
   const [errorMessage, setErrorMessage] = useState("")
-  const [customCategoryEnabled, setCustomCategoryEnabled] = useState(false)
   const [locationLoading, setLocationLoading] = useState(false)
   const [locationMessage, setLocationMessage] = useState("")
   const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([])
   const fileInputRef = useRef<HTMLInputElement | null>(null)
-  const customCategoryInputRef = useRef<HTMLInputElement | null>(null)
   const isPremium = plan === "premium"
   const durationTotal = getDurationTotal(values)
   const descriptionLength = values.description.trim().length
@@ -226,14 +210,7 @@ export function AdminServiceForm({
   }
 
   function chooseCategory(category: string) {
-    setCustomCategoryEnabled(false)
     updateField("category", category)
-  }
-
-  function chooseCustomCategory() {
-    setCustomCategoryEnabled(true)
-    updateField("category", "")
-    window.setTimeout(() => customCategoryInputRef.current?.focus(), 0)
   }
 
   function updateDuration(field: "durationHours" | "durationMinutes", value: string) {
@@ -387,7 +364,6 @@ export function AdminServiceForm({
       }
 
       setValues(initialValues)
-      setCustomCategoryEnabled(false)
       setLocationSuggestions([])
       setLocationMessage("")
       clearImage()
@@ -452,11 +428,7 @@ export function AdminServiceForm({
             <div className="md:col-span-2">
               <CategoryPicker
                 selectedCategory={values.category}
-                customEnabled={customCategoryEnabled}
-                customInputRef={customCategoryInputRef}
                 onChoose={chooseCategory}
-                onChooseCustom={chooseCustomCategory}
-                onCustomChange={(category) => updateField("category", category)}
               />
             </div>
 
@@ -647,32 +619,28 @@ export function AdminServiceForm({
 
 function CategoryPicker({
   selectedCategory,
-  customEnabled,
-  customInputRef,
   onChoose,
-  onChooseCustom,
-  onCustomChange,
 }: {
   selectedCategory: string
-  customEnabled: boolean
-  customInputRef: RefObject<HTMLInputElement | null>
   onChoose: (category: string) => void
-  onChooseCustom: () => void
-  onCustomChange: (category: string) => void
 }) {
   return (
     <div className="grid gap-2 text-sm font-medium">
-      <span>Catégorie</span>
-      <div className="flex flex-wrap gap-2">
-        {CATEGORY_SUGGESTIONS.map((category) => {
-          const active = !customEnabled && selectedCategory === category
+      <span id="category">Catégorie</span>
+      <div
+        role="group"
+        aria-labelledby="category"
+        className="grid grid-cols-2 gap-2"
+      >
+        {SERVICE_CATEGORIES.map((category) => {
+          const active = selectedCategory === category
           return (
             <button
               key={category}
               type="button"
               aria-pressed={active}
               onClick={() => onChoose(category)}
-              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+              className={`rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
                 active
                   ? "border-amber-400/60 bg-amber-400/15 text-amber-200"
                   : "border-white/10 bg-white/5 text-muted-foreground hover:border-amber-300/40 hover:text-foreground"
@@ -682,29 +650,6 @@ function CategoryPicker({
             </button>
           )
         })}
-      </div>
-      <div className="grid gap-2 rounded-xl border border-white/10 bg-white/5 p-3">
-        <button
-          type="button"
-          aria-pressed={customEnabled}
-          onClick={onChooseCustom}
-          className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
-            customEnabled
-              ? "border-amber-400/60 bg-amber-400/15 text-amber-200"
-              : "border-white/10 bg-background/40 text-muted-foreground hover:border-amber-300/40 hover:text-foreground"
-          }`}
-        >
-          Autre catégorie
-        </button>
-        {customEnabled ? (
-          <Input
-            ref={customInputRef}
-            id="category"
-            placeholder="Ex : Pose perruque, maquillage, soins capillaires..."
-            value={selectedCategory}
-            onChange={(event) => onCustomChange(event.target.value)}
-          />
-        ) : null}
       </div>
     </div>
   )

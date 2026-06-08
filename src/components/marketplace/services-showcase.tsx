@@ -54,27 +54,6 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
 ];
 
 const RADIUS_OPTIONS = [5, 10, 20, 50];
-const AUDIENCE_CATEGORY_KEYS = new Set([
-  "homme",
-  "femme",
-  "coiffure homme",
-  "coiffure femme",
-  "coupe homme",
-  "coupe femme",
-]);
-
-function normalizeFilterLabel(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/\s+/g, " ");
-}
-
-function isAudienceCategory(category: string) {
-  return AUDIENCE_CATEGORY_KEYS.has(normalizeFilterLabel(category));
-}
 
 function hasServiceCoordinates(service: ServiceItem) {
   return (
@@ -119,7 +98,6 @@ export function ServicesShowcase({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [activeCategory, setActiveCategory] = useState<string>("all");
   const [audience, setAudience] = useState<Audience>("all");
   const [sort, setSort] = useState<NearbySortKey>("featured");
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
@@ -152,16 +130,6 @@ export function ServicesShowcase({
       setLoading(false);
     }
   }
-
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    services.forEach((s) => {
-      if (!isAudienceCategory(s.category)) {
-        set.add(s.category);
-      }
-    });
-    return Array.from(set).sort((a, b) => a.localeCompare(b));
-  }, [services]);
 
   const locations = useMemo(
     () => new Set(services.map((s) => s.city)).size,
@@ -200,10 +168,6 @@ export function ServicesShowcase({
           s.neighborhood.toLowerCase().includes(q) ||
           s.category.toLowerCase().includes(q)
       );
-    }
-
-    if (activeCategory !== "all") {
-      result = result.filter((s) => s.category === activeCategory);
     }
 
     if (audience === "male" || audience === "female") {
@@ -246,7 +210,6 @@ export function ServicesShowcase({
   }, [
     services,
     query,
-    activeCategory,
     audience,
     nearbyEnabled,
     userLocation,
@@ -275,14 +238,10 @@ export function ServicesShowcase({
   }, [isProviderView, audience, topProviders, query]);
 
   const hasFilter =
-    query.trim().length > 0 ||
-    activeCategory !== "all" ||
-    audience !== "all" ||
-    nearbyEnabled;
+    query.trim().length > 0 || audience !== "all" || nearbyEnabled;
 
   function resetFilters() {
     setQuery("");
-    setActiveCategory("all");
     setAudience("all");
     setNearbyEnabled(false);
     setSort("featured");
@@ -376,9 +335,6 @@ export function ServicesShowcase({
       </section>
 
       <Filters
-        categories={categories}
-        activeCategory={activeCategory}
-        onCategoryChange={setActiveCategory}
         audience={audience}
         onAudienceChange={setAudience}
         sort={sort}
@@ -558,9 +514,6 @@ function SearchBar({
 }
 
 function Filters({
-  categories,
-  activeCategory,
-  onCategoryChange,
   audience,
   onAudienceChange,
   sort,
@@ -568,9 +521,6 @@ function Filters({
   nearbyEnabled,
   hasLocation,
 }: {
-  categories: string[];
-  activeCategory: string;
-  onCategoryChange: (c: string) => void;
   audience: Audience;
   onAudienceChange: (a: Audience) => void;
   sort: NearbySortKey;
@@ -627,20 +577,7 @@ function Filters({
         </div>
 
         {providerView ? null : (
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            {categories.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {categories.map((c) => (
-                  <CategoryChip
-                    key={c}
-                    label={c}
-                    active={activeCategory === c}
-                    onClick={() => onCategoryChange(c)}
-                  />
-                ))}
-              </div>
-            ) : null}
-
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-end">
             <div className="relative shrink-0">
               <label htmlFor="marketplace-sort" className="sr-only">
                 Trier
@@ -698,31 +635,6 @@ function GenderChip({
       className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all ${palette}`}
     >
       {icon}
-      {label}
-    </button>
-  );
-}
-
-function CategoryChip({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      className={`rounded-full border px-4 py-1.5 text-xs font-medium transition-all ${
-        active
-          ? "border-amber-400/40 bg-amber-400/15 text-amber-100 shadow-[0_0_20px_-4px_rgba(251,191,36,0.35)]"
-          : "border-white/15 bg-white/5 text-white/65 hover:border-white/30 hover:text-white"
-      }`}
-    >
       {label}
     </button>
   );
