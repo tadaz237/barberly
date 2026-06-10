@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Headphones, ShieldCheck, Users } from "lucide-react";
+import { Headphones, ShieldCheck } from "lucide-react";
+import { PlatformUserTabs } from "@/src/components/platform/platform-user-tabs";
 import { SupportInbox } from "@/src/components/support/support-chat";
 import { auth } from "@/src/lib/auth";
 import { listSupportConversationsForAdmin } from "@/src/lib/support-store";
@@ -55,8 +56,7 @@ export default async function PlatformSupportPage() {
       </header>
 
       <div className="relative mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-10 lg:px-8 lg:py-12">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="space-y-2">
+        <div className="space-y-2">
             <p className="inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-sky-200">
               <Headphones className="size-3.5" />
               Messagerie support
@@ -68,22 +68,9 @@ export default async function PlatformSupportPage() {
               Répondez aux clients et professionnels qui vous contactent depuis
               l&apos;icône support de leur espace.
             </p>
-          </div>
-          <Link
-            href="/platform/kyc"
-            className="inline-flex h-9 items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 text-xs font-semibold text-amber-100 transition-colors hover:bg-amber-300/20"
-          >
-            <ShieldCheck className="size-4" />
-            Validation KYC
-          </Link>
-          <Link
-            href="/platform/users"
-            className="inline-flex h-9 items-center gap-2 rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 text-xs font-semibold text-cyan-100 transition-colors hover:bg-cyan-300/20"
-          >
-            <Users className="size-4" />
-            Utilisateurs
-          </Link>
         </div>
+
+        <PlatformUserTabs active="support" />
 
         <SupportInbox initialConversations={conversations} />
       </div>

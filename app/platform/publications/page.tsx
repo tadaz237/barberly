@@ -2,13 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   ArrowLeft,
-  BadgeCheck,
   Clock3,
   Crown,
   FileText,
   MapPin,
   Scissors,
-  ShieldCheck,
   Users,
 } from "lucide-react";
 import { PlatformUserTabs } from "@/src/components/platform/platform-user-tabs";
@@ -55,7 +53,6 @@ export default async function PlatformPublicationsPage() {
             <ArrowLeft className="size-4" />
             Retour au tableau de bord
           </Link>
-          <PlatformNav />
         </div>
 
         <header className="grid gap-5 rounded-3xl border border-white/10 bg-linear-to-br from-zinc-800/60 via-zinc-900/70 to-zinc-950/90 p-5 backdrop-blur sm:p-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
@@ -175,27 +172,6 @@ export default async function PlatformPublicationsPage() {
         )}
       </div>
     </main>
-  );
-}
-
-function PlatformNav() {
-  return (
-    <nav className="flex flex-wrap gap-2 text-xs">
-      <Link
-        href="/platform/kyc"
-        className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 font-semibold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-      >
-        <BadgeCheck className="size-3.5" />
-        KYC
-      </Link>
-      <Link
-        href="/platform/users"
-        className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 font-semibold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-      >
-        <ShieldCheck className="size-3.5" />
-        Utilisateurs
-      </Link>
-    </nav>
   );
 }
 
