@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { FileText, Headphones, ShieldCheck, Users } from "lucide-react";
+import { Headphones, ShieldCheck, Users } from "lucide-react";
 import { SupportInbox } from "@/src/components/support/support-chat";
 import { auth } from "@/src/lib/auth";
 import { listSupportConversationsForAdmin } from "@/src/lib/support-store";
@@ -82,13 +82,6 @@ export default async function PlatformSupportPage() {
           >
             <Users className="size-4" />
             Utilisateurs
-          </Link>
-          <Link
-            href="/platform/publications"
-            className="inline-flex h-9 items-center gap-2 rounded-full border border-red-300/30 bg-red-300/10 px-3 text-xs font-semibold text-red-100 transition-colors hover:bg-red-300/20"
-          >
-            <FileText className="size-4" />
-            Publications
           </Link>
         </div>
 

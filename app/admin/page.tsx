@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   Clock4,
   Crown,
-  FileText,
   Images,
   ShieldAlert,
   ShieldCheck,
@@ -193,13 +192,6 @@ export default async function AdminPage() {
                 >
                   <Users className="size-4" />
                   <span className="hidden sm:inline">Utilisateurs</span>
-                </Link>
-                <Link
-                  href="/platform/publications"
-                  className="inline-flex h-9 items-center gap-2 rounded-full border border-red-300/30 bg-red-300/10 px-3 text-xs font-semibold text-red-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-300/20"
-                >
-                  <FileText className="size-4" />
-                  <span className="hidden sm:inline">Publications</span>
                 </Link>
                 <SupportLink
                   href="/platform/support"

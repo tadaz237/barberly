@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Users,
 } from "lucide-react";
+import { PlatformUserTabs } from "@/src/components/platform/platform-user-tabs";
 import { PublicationModerationActions } from "@/src/components/platform/publication-moderation-actions";
 import { auth } from "@/src/lib/auth";
 import { listPlatformServicePublications } from "@/src/lib/services-store";
@@ -77,6 +78,8 @@ export default async function PlatformPublicationsPage() {
             <Metric label="Sans compte" value={orphanedCount} tone="amber" />
           </div>
         </header>
+
+        <PlatformUserTabs active="publications" />
 
         {publications.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-white/15 bg-white/3 p-10 text-center backdrop-blur">

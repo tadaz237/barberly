@@ -3,11 +3,11 @@ import { redirect } from "next/navigation";
 import {
   ArrowLeft,
   BadgeCheck,
-  FileText,
   ShieldCheck,
   ShieldX,
   Users,
 } from "lucide-react";
+import { PlatformUserTabs } from "@/src/components/platform/platform-user-tabs";
 import { PlatformUserControls } from "@/src/components/platform/platform-user-controls";
 import { auth } from "@/src/lib/auth";
 import {
@@ -77,6 +77,8 @@ export default async function PlatformUsersPage() {
             <Metric label="Bloques" value={blockedCount} tone="red" />
           </div>
         </header>
+
+        <PlatformUserTabs active="accounts" />
 
         <section className="grid gap-4 lg:grid-cols-2">
           {users.map((user) => {
@@ -158,13 +160,6 @@ function PlatformNav() {
       >
         <BadgeCheck className="size-3.5" />
         KYC
-      </Link>
-      <Link
-        href="/platform/publications"
-        className="inline-flex h-9 items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 font-semibold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-      >
-        <FileText className="size-3.5" />
-        Publications
       </Link>
     </nav>
   );

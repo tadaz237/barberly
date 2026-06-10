@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import {
   CheckCircle2,
   Clock4,
-  FileText,
   Inbox,
   ShieldAlert,
   ShieldCheck,
@@ -111,13 +110,6 @@ export default async function PlatformKycListPage({
             >
               <Users className="size-3.5" />
               Utilisateurs
-            </Link>
-            <Link
-              href="/platform/publications"
-              className="inline-flex h-8 items-center gap-2 rounded-full border border-red-300/30 bg-red-300/10 px-3 text-xs font-semibold text-red-100 transition-colors hover:bg-red-300/20"
-            >
-              <FileText className="size-3.5" />
-              Publications
             </Link>
             <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs">
               <ShieldCheck className="size-3.5 text-amber-300" />

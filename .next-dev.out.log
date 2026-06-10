@@ -9,3 +9,8 @@
 ✓ Ready in 3.1s
 Creating turbopack project { dir: 'G:\\jeux\\test2\\test2', testMode: true }
 
+ GET / 200 in 3.7s (next.js: 1692ms, application-code: 2.0s)
+○ Compiling /platform/users ...
+ GET /platform/users 307 in 5.9s (next.js: 5.6s, application-code: 292ms)
+✓ Compiled in 1189ms
+✓ Compiled in 893ms
