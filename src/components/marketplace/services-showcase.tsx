@@ -90,8 +90,10 @@ function formatDistance(value: number) {
 }
 
 export function ServicesShowcase({
+  hideProCta = false,
   topProviders = [],
 }: {
+  hideProCta?: boolean;
   topProviders?: TopProvider[];
 }) {
   const [services, setServices] = useState<ServiceItem[]>([]);
@@ -402,7 +404,7 @@ export function ServicesShowcase({
         )}
       </section>
 
-      <ProCta />
+      {hideProCta ? null : <ProCta />}
     </div>
   );
 }
