@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, MessageCircle } from "lucide-react";
+import { ArrowLeft, LifeBuoy, MessageCircle } from "lucide-react";
 import { SignOutButton } from "@/src/components/auth/sign-out-button";
 import { MessagesPanel } from "@/src/components/messages/messages-panel";
+import { SupportLink } from "@/src/components/support/support-link";
 import { auth } from "@/src/lib/auth";
 import { listConversationsForUser } from "@/src/lib/conversations-store";
 import { getUserById } from "@/src/lib/users-store";
@@ -34,7 +35,15 @@ export default async function ClientMessagesPage() {
             <ArrowLeft className="size-4" />
             Retour à mon espace
           </Link>
-          <SignOutButton />
+          <div className="flex items-center gap-2">
+            <SupportLink
+              href="/support"
+              icon={LifeBuoy}
+              label="Support"
+              className="inline-flex h-9 items-center gap-2 rounded-full border border-sky-400/30 bg-sky-400/10 px-3 text-xs font-semibold text-sky-100 transition-colors hover:bg-sky-400/20"
+            />
+            <SignOutButton />
+          </div>
         </div>
         <header className="space-y-3">
           <span className="inline-flex items-center gap-2 rounded-full border border-pink-400/30 bg-pink-400/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.22em] text-pink-200">

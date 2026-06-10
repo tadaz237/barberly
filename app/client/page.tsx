@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import {
   CheckCircle2,
   Clock4,
+  LifeBuoy,
   MessageCircle,
   Sparkles,
   Star,
@@ -10,6 +11,7 @@ import {
 import { SignOutButton } from "@/src/components/auth/sign-out-button";
 import { ReviewForm } from "@/src/components/client/review-form";
 import { MessagesLinkWithNotifications } from "@/src/components/messages/message-notifications";
+import { SupportLink } from "@/src/components/support/support-link";
 import { auth } from "@/src/lib/auth";
 import { getReservationsForClient } from "@/src/lib/reservations-store";
 import { getUserById } from "@/src/lib/users-store";
@@ -77,6 +79,12 @@ export default async function ClientPage() {
             >
               Messages
             </MessagesLinkWithNotifications>
+            <SupportLink
+              href="/support"
+              icon={LifeBuoy}
+              label="Support"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 text-sm font-semibold text-sky-100 transition-colors hover:bg-sky-400/20"
+            />
             <SignOutButton />
           </div>
         </header>

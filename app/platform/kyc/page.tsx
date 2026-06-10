@@ -4,12 +4,14 @@ import { redirect } from "next/navigation";
 import {
   CheckCircle2,
   Clock4,
+  Headphones,
   Inbox,
   ShieldAlert,
   ShieldCheck,
   ShieldX,
   UserRound,
 } from "lucide-react";
+import { SupportLink } from "@/src/components/support/support-link";
 import { auth } from "@/src/lib/auth";
 import {
   isPlatformAdmin,
@@ -92,9 +94,17 @@ export default async function PlatformKycListPage({
             />
           </Link>
 
-          <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs">
-            <ShieldCheck className="size-3.5 text-amber-300" />
-            <span className="text-white/70">Admin plateforme</span>
+          <div className="flex items-center gap-2">
+            <SupportLink
+              href="/platform/support"
+              icon={Headphones}
+              label="Support"
+              className="inline-flex h-8 items-center gap-2 rounded-full border border-sky-400/30 bg-sky-400/10 px-3 text-xs font-semibold text-sky-100 transition-colors hover:bg-sky-400/20"
+            />
+            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs">
+              <ShieldCheck className="size-3.5 text-amber-300" />
+              <span className="text-white/70">Admin plateforme</span>
+            </div>
           </div>
         </div>
       </header>

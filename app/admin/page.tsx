@@ -6,7 +6,9 @@ import {
   CheckCircle2,
   Clock4,
   Crown,
+  Headphones,
   Images,
+  LifeBuoy,
   ShieldAlert,
   ShieldCheck,
   ShieldEllipsis,
@@ -24,6 +26,7 @@ import { AdminServicesPanel } from "@/src/components/admin/admin-services-panel"
 import { KycVerifiedNotice } from "@/src/components/admin/kyc-verified-notice"
 import { SignOutButton } from "@/src/components/auth/sign-out-button"
 import { MessagesLinkWithNotifications } from "@/src/components/messages/message-notifications"
+import { SupportLink } from "@/src/components/support/support-link"
 import { QuickAccessButton } from "@/src/components/quick-access-button"
 import { auth } from "@/src/lib/auth"
 import {
@@ -172,14 +175,29 @@ export default async function AdminPage() {
               <span className="hidden sm:inline">Messages</span>
             </MessagesLinkWithNotifications>
             {platformAdmin ? (
-              <Link
-                href="/platform/kyc"
-                className="inline-flex h-9 items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 text-xs font-semibold text-amber-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-amber-300/20"
-              >
-                <ShieldEllipsis className="size-4" />
-                <span className="hidden sm:inline">Validation KYC</span>
-              </Link>
-            ) : null}
+              <>
+                <Link
+                  href="/platform/kyc"
+                  className="inline-flex h-9 items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 text-xs font-semibold text-amber-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-amber-300/20"
+                >
+                  <ShieldEllipsis className="size-4" />
+                  <span className="hidden sm:inline">Validation KYC</span>
+                </Link>
+                <SupportLink
+                  href="/platform/support"
+                  icon={Headphones}
+                  label="Support"
+                  className="inline-flex h-9 items-center gap-2 rounded-full border border-sky-400/30 bg-sky-400/10 px-3 text-xs font-semibold text-sky-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-sky-400/20"
+                />
+              </>
+            ) : (
+              <SupportLink
+                href="/support"
+                icon={LifeBuoy}
+                label="Support"
+                className="inline-flex h-9 items-center gap-2 rounded-full border border-sky-400/30 bg-sky-400/10 px-3 text-xs font-semibold text-sky-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-sky-400/20"
+              />
+            )}
             <QuickAccessButton />
             <SignOutButton />
           </div>

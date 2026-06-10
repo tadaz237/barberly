@@ -541,13 +541,28 @@ export async function rejectKyc(
   return toKycSubmission(updated);
 }
 
-export function isPlatformAdmin(email: string | null | undefined): boolean {
-  if (!email) return false;
-  const list = (process.env.PLATFORM_ADMIN_EMAILS ?? "")
+function platformAdminEmails(): string[] {
+  return (process.env.PLATFORM_ADMIN_EMAILS ?? "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
-  return list.includes(email.toLowerCase());
+}
+
+export function isPlatformAdmin(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return platformAdminEmails().includes(email.toLowerCase());
+}
+
+/** Resolves the user ids of the platform super admins (for push routing). */
+export async function getPlatformAdminUserIds(): Promise<string[]> {
+  const emails = platformAdminEmails();
+  if (emails.length === 0) return [];
+
+  const admins = await prisma.user.findMany({
+    where: { email: { in: emails } },
+    select: { id: true },
+  });
+  return admins.map((admin) => admin.id);
 }
 
 export function isProfessionalUser(user: PublicUser | null | undefined) {

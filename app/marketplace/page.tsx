@@ -1,10 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronRight, UserRound } from "lucide-react";
+import { ChevronRight, Headphones, LifeBuoy, UserRound } from "lucide-react";
 import { ServicesShowcase } from "@/src/components/marketplace/services-showcase";
+import { SupportLink } from "@/src/components/support/support-link";
 import { auth } from "@/src/lib/auth";
 import { getTopRatedProviders } from "@/src/lib/reviews-store";
-import { getUserById } from "@/src/lib/users-store";
+import { getUserById, isPlatformAdmin } from "@/src/lib/users-store";
 
 export default async function MarketplacePage() {
   const session = await auth();
@@ -38,6 +39,18 @@ export default async function MarketplacePage() {
           </Link>
 
           <div className="flex items-center gap-2">
+            {user ? (
+              <SupportLink
+                href={
+                  isPlatformAdmin(session?.user?.email)
+                    ? "/platform/support"
+                    : "/support"
+                }
+                icon={isPlatformAdmin(session?.user?.email) ? Headphones : LifeBuoy}
+                className="inline-flex size-9 items-center justify-center rounded-full border border-sky-400/30 bg-sky-400/10 text-sky-100 transition-colors hover:bg-sky-400/20"
+                iconClassName="size-4"
+              />
+            ) : null}
             {user ? (
               <Link
                 href={user.role === "client" ? "/client" : "/admin"}
