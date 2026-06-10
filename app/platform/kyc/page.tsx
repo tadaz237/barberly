@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import {
   CheckCircle2,
   Clock4,
-  Headphones,
   Inbox,
   ShieldAlert,
   ShieldCheck,
@@ -97,7 +96,7 @@ export default async function PlatformKycListPage({
           <div className="flex items-center gap-2">
             <SupportLink
               href="/platform/support"
-              icon={Headphones}
+              icon="headphones"
               label="Support"
               className="inline-flex h-8 items-center gap-2 rounded-full border border-sky-400/30 bg-sky-400/10 px-3 text-xs font-semibold text-sky-100 transition-colors hover:bg-sky-400/20"
             />

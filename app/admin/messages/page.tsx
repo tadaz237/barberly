@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, Headphones, LifeBuoy, MessageCircle } from "lucide-react";
+import { ArrowLeft, MessageCircle } from "lucide-react";
 import { MessagesPanel } from "@/src/components/messages/messages-panel";
 import { SupportLink } from "@/src/components/support/support-link";
 import { auth } from "@/src/lib/auth";
@@ -37,7 +37,7 @@ export default async function AdminMessagesPage() {
           </Link>
           <SupportLink
             href={platformAdmin ? "/platform/support" : "/support"}
-            icon={platformAdmin ? Headphones : LifeBuoy}
+            icon={platformAdmin ? "headphones" : "life-buoy"}
             label="Support"
             className="inline-flex h-9 items-center gap-2 rounded-full border border-sky-400/30 bg-sky-400/10 px-3 text-xs font-semibold text-sky-100 transition-colors hover:bg-sky-400/20"
           />

@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import {
   CheckCircle2,
   Clock4,
-  LifeBuoy,
   MessageCircle,
   Sparkles,
   Star,
@@ -81,7 +80,7 @@ export default async function ClientPage() {
             </MessagesLinkWithNotifications>
             <SupportLink
               href="/support"
-              icon={LifeBuoy}
+              icon="life-buoy"
               label="Support"
               className="inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-sky-400/30 bg-sky-400/10 px-4 text-sm font-semibold text-sky-100 transition-colors hover:bg-sky-400/20"
             />

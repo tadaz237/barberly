@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronRight, Headphones, LifeBuoy, UserRound } from "lucide-react";
+import { ChevronRight, UserRound } from "lucide-react";
 import { ServicesShowcase } from "@/src/components/marketplace/services-showcase";
 import { SupportLink } from "@/src/components/support/support-link";
 import { auth } from "@/src/lib/auth";
@@ -46,7 +46,9 @@ export default async function MarketplacePage() {
                     ? "/platform/support"
                     : "/support"
                 }
-                icon={isPlatformAdmin(session?.user?.email) ? Headphones : LifeBuoy}
+                icon={
+                  isPlatformAdmin(session?.user?.email) ? "headphones" : "life-buoy"
+                }
                 className="inline-flex size-9 items-center justify-center rounded-full border border-sky-400/30 bg-sky-400/10 text-sky-100 transition-colors hover:bg-sky-400/20"
                 iconClassName="size-4"
               />

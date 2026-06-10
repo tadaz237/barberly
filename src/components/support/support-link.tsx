@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useState, type ComponentType } from "react";
+import { Headphones, LifeBuoy } from "lucide-react";
 import { cn } from "@/src/lib/utils";
+
+type SupportIconName = "headphones" | "life-buoy";
 
 type SupportLinkProps = {
   href: string;
-  icon: ComponentType<{ className?: string }>;
+  icon: SupportIconName;
   label?: string;
   className?: string;
   iconClassName?: string;
@@ -14,15 +17,21 @@ type SupportLinkProps = {
 
 const POLLING_INTERVAL_MS = 10_000;
 
+const SUPPORT_ICONS: Record<SupportIconName, ComponentType<{ className?: string }>> = {
+  headphones: Headphones,
+  "life-buoy": LifeBuoy,
+};
+
 /** Support entry point that polls and shows an unread-message badge. */
 export function SupportLink({
   href,
-  icon: Icon,
+  icon,
   label,
   className,
   iconClassName,
 }: SupportLinkProps) {
   const [unreadTotal, setUnreadTotal] = useState(0);
+  const Icon = SUPPORT_ICONS[icon];
 
   useEffect(() => {
     let cancelled = false;

@@ -6,9 +6,7 @@ import {
   CheckCircle2,
   Clock4,
   Crown,
-  Headphones,
   Images,
-  LifeBuoy,
   ShieldAlert,
   ShieldCheck,
   ShieldEllipsis,
@@ -185,7 +183,7 @@ export default async function AdminPage() {
                 </Link>
                 <SupportLink
                   href="/platform/support"
-                  icon={Headphones}
+                  icon="headphones"
                   label="Support"
                   className="inline-flex h-9 items-center gap-2 rounded-full border border-sky-400/30 bg-sky-400/10 px-3 text-xs font-semibold text-sky-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-sky-400/20"
                 />
@@ -193,7 +191,7 @@ export default async function AdminPage() {
             ) : (
               <SupportLink
                 href="/support"
-                icon={LifeBuoy}
+                icon="life-buoy"
                 label="Support"
                 className="inline-flex h-9 items-center gap-2 rounded-full border border-sky-400/30 bg-sky-400/10 px-3 text-xs font-semibold text-sky-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-sky-400/20"
               />
