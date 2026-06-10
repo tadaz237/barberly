@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { MessageNotificationsProvider } from "@/src/components/messages/message-notifications";
 import { BrowserPushNotifications } from "@/src/components/push-notifications-browser";
 import { PwaRegister } from "@/src/components/pwa-register";
+import { SiteFooter } from "@/src/components/site-footer";
 import { SupportFab } from "@/src/components/support/support-fab";
 import "./globals.css";
 
@@ -40,6 +41,7 @@ export default function RootLayout({
         <MessageNotificationsProvider>
           <PwaRegister />
           {children}
+          <SiteFooter />
           <SupportFab />
           <BrowserPushNotifications />
         </MessageNotificationsProvider>

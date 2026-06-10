@@ -215,9 +215,6 @@ export default async function Home() {
           </div>
         </section>
 
-        <footer className="border-t border-white/10 pt-6 text-center text-xs text-white/40">
-          Vous pourrez changer de profil plus tard depuis votre espace.
-        </footer>
       </div>
     </main>
   );
