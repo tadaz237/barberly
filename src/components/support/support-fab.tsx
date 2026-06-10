@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LifeBuoy } from "lucide-react";
+import { MessageCircleMore } from "lucide-react";
 
 type SupportState = {
   authed: boolean;
@@ -83,12 +83,12 @@ export function SupportFab() {
           : "Contacter le support"
       }
       title="Contacter le support"
-      className="group fixed bottom-5 right-5 z-90 inline-flex items-center gap-2 rounded-full border border-sky-300/40 bg-sky-500 py-3 pl-3 pr-4 text-sm font-semibold text-sky-950 shadow-2xl shadow-sky-900/40 transition-all duration-200 hover:-translate-y-0.5 hover:bg-sky-400 sm:bottom-6 sm:right-6"
+      className="group fixed bottom-5 right-5 z-90 inline-flex items-center gap-2 rounded-full border border-cyan-200/55 bg-linear-to-br from-cyan-300 via-teal-300 to-emerald-300 py-3 pl-3 pr-4 text-sm font-semibold text-slate-950 shadow-2xl shadow-cyan-950/35 transition-all duration-200 hover:-translate-y-0.5 hover:from-cyan-200 hover:via-teal-200 hover:to-emerald-200 sm:bottom-6 sm:right-6"
     >
       <span className="relative inline-flex">
-        <LifeBuoy className="size-5" />
+        <MessageCircleMore className="size-5 drop-shadow-[0_0_10px_rgba(8,145,178,0.55)]" />
         {unreadTotal > 0 ? (
-          <span className="absolute -right-2.5 -top-2 inline-flex min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold leading-4 text-white ring-2 ring-sky-500">
+          <span className="absolute -right-2.5 -top-2 inline-flex min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold leading-4 text-white ring-2 ring-cyan-300">
             {unreadTotal > 99 ? "99+" : unreadTotal}
           </span>
         ) : null}

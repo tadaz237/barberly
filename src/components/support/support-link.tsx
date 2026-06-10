@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, type ComponentType } from "react";
-import { Headphones, LifeBuoy } from "lucide-react";
+import { MessageCircleMore, MessagesSquare } from "lucide-react";
 import { cn } from "@/src/lib/utils";
 
 type SupportIconName = "headphones" | "life-buoy";
@@ -18,8 +18,8 @@ type SupportLinkProps = {
 const POLLING_INTERVAL_MS = 10_000;
 
 const SUPPORT_ICONS: Record<SupportIconName, ComponentType<{ className?: string }>> = {
-  headphones: Headphones,
-  "life-buoy": LifeBuoy,
+  headphones: MessagesSquare,
+  "life-buoy": MessageCircleMore,
 };
 
 /** Support entry point that polls and shows an unread-message badge. */
@@ -75,9 +75,14 @@ export function SupportLink({
       className={cn("relative", className)}
     >
       <span className="relative inline-flex">
-        <Icon className={cn("size-4", iconClassName)} />
+        <Icon
+          className={cn(
+            "size-4 text-cyan-200 drop-shadow-[0_0_10px_rgba(34,211,238,0.65)]",
+            iconClassName,
+          )}
+        />
         {unreadTotal > 0 ? (
-          <span className="absolute -right-2.5 -top-2 inline-flex min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold leading-4 text-white ring-2 ring-black">
+          <span className="absolute -right-2.5 -top-2 inline-flex min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[9px] font-bold leading-4 text-white ring-2 ring-cyan-950">
             {unreadTotal > 99 ? "99+" : unreadTotal}
           </span>
         ) : null}
