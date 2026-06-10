@@ -4,7 +4,11 @@ import {
   deleteImageFromCloudinary,
   uploadImageToCloudinary,
 } from "@/src/lib/cloudinary";
-import { getUserById, updateUserProfile } from "@/src/lib/users-store";
+import {
+  getUserById,
+  isAccountActive,
+  updateUserProfile,
+} from "@/src/lib/users-store";
 
 type IncomingPayload = {
   name?: unknown;
@@ -80,6 +84,9 @@ export async function PATCH(request: Request) {
   const existingUser = await getUserById(session.user.id);
   if (!existingUser) {
     return NextResponse.json({ message: "Compte introuvable." }, { status: 404 });
+  }
+  if (!isAccountActive(existingUser)) {
+    return NextResponse.json({ message: "Compte bloque." }, { status: 403 });
   }
 
   let image: string | null | undefined;

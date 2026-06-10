@@ -6,7 +6,7 @@ import {
   type ReservationStatus,
 } from "@/src/lib/reservations-store";
 import { sendBrowserPushToUser } from "@/src/lib/push-notifications";
-import { getUserById } from "@/src/lib/users-store";
+import { getUserById, isProfessionalUser } from "@/src/lib/users-store";
 
 const ALLOWED: ReservationStatus[] = [
   "pending",
@@ -24,6 +24,11 @@ export async function PATCH(
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ message: "Non authentifié." }, { status: 401 });
+  }
+
+  const user = await getUserById(session.user.id);
+  if (!isProfessionalUser(user)) {
+    return NextResponse.json({ message: "Acces refuse." }, { status: 403 });
   }
 
   const { id } = await params;

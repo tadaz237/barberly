@@ -55,6 +55,11 @@ enum UserRole {
   professional
 }
 
+enum AccountStatus {
+  active
+  blocked
+}
+
 enum ReviewStatus {
   published
   hidden
@@ -71,6 +76,10 @@ model User {
   gender        Gender?
   provider      AuthProvider @default(credentials)
   role          UserRole     @default(professional)
+  accountStatus AccountStatus @default(active)
+  blockedAt     DateTime?
+  blockedBy     String?
+  blockedReason String?
   plan          Plan         @default(free)
   planExpiresAt DateTime?
   createdAt     DateTime     @default(now())

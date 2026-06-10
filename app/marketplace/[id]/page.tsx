@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import {
   ArrowLeft,
   CalendarCheck,
@@ -87,6 +87,9 @@ export default async function ServiceDetailPage({
           })
         : Promise.resolve(false),
     ]);
+  if (currentUser?.accountStatus === "blocked") {
+    redirect("/account-blocked");
+  }
   const toneKey = getMarketplaceToneKey(
     service.ownerGender ?? coiffeur?.gender,
     service.category,

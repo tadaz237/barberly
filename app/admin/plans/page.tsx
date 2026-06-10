@@ -94,6 +94,12 @@ export default async function PlansPage({ searchParams }: PlansPageProps) {
     redirect("/login?callbackUrl=/admin/plans");
   }
   const user = await getUserById(session.user.id);
+  if (!user) {
+    redirect("/login?callbackUrl=/admin/plans");
+  }
+  if (user.accountStatus === "blocked") {
+    redirect("/account-blocked");
+  }
   if (user?.role === "client") {
     redirect("/client");
   }

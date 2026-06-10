@@ -4,6 +4,7 @@ import { prisma } from "@/src/lib/prisma";
 
 export type Plan = "free" | "essential" | "pro" | "premium";
 export type AccountRole = "client" | "professional";
+export type AccountStatus = "active" | "blocked";
 
 export type PlanLimits = {
   servicesPerDay: number; // Infinity = illimité
@@ -172,9 +173,20 @@ export type PublicUser = {
   bio?: string;
   gender?: Gender;
   role: AccountRole;
+  accountStatus: AccountStatus;
+  blockedAt?: string;
+  blockedBy?: string;
+  blockedReason?: string;
   kycStatus: KycStatus;
   plan: Plan;
   planExpiresAt?: string;
+};
+
+export type PlatformUserListEntry = PublicUser & {
+  servicesCount: number;
+  cataloguesCount: number;
+  productsCount: number;
+  reservationsCount: number;
 };
 
 export type RegisterInput = {
@@ -265,10 +277,18 @@ function toPublic(user: User & { kyc: Kyc | null }): PublicUser {
     bio: user.bio ?? undefined,
     gender: user.gender ?? undefined,
     role: user.role,
+    accountStatus: user.accountStatus,
+    blockedAt: user.blockedAt?.toISOString(),
+    blockedBy: user.blockedBy ?? undefined,
+    blockedReason: user.blockedReason ?? undefined,
     kycStatus: deriveKycStatus(user.kyc),
     plan: user.plan,
     planExpiresAt: user.planExpiresAt?.toISOString(),
   };
+}
+
+export function isAccountActive(user: PublicUser | null | undefined) {
+  return user?.accountStatus === "active";
 }
 
 export async function getUserPlan(userId: string): Promise<Plan> {
@@ -298,6 +318,70 @@ export async function setUserPlan(
     data: { plan, planExpiresAt: expires },
     include: { kyc: true },
   });
+  return toPublic(user);
+}
+
+export async function listPlatformUsers(): Promise<PlatformUserListEntry[]> {
+  const users = await prisma.user.findMany({
+    orderBy: { createdAt: "desc" },
+    include: {
+      kyc: true,
+      _count: {
+        select: {
+          services: true,
+          catalogues: true,
+          products: true,
+          clientReservations: true,
+        },
+      },
+    },
+  });
+
+  return users.map((user) => ({
+    ...toPublic(user),
+    servicesCount: user._count.services,
+    cataloguesCount: user._count.catalogues,
+    productsCount: user._count.products,
+    reservationsCount: user._count.clientReservations,
+  }));
+}
+
+export async function getUserByEmail(
+  email: string,
+): Promise<PublicUser | null> {
+  const user = await prisma.user.findUnique({
+    where: { email: normalizeEmail(email) },
+    include: { kyc: true },
+  });
+  return user ? toPublic(user) : null;
+}
+
+export async function setUserAccountStatus(input: {
+  userId: string;
+  status: AccountStatus;
+  adminId: string;
+  reason?: string;
+}): Promise<PublicUser | null> {
+  const user = await prisma.user.update({
+    where: { id: input.userId },
+    data:
+      input.status === "blocked"
+        ? {
+            accountStatus: "blocked",
+            blockedAt: new Date(),
+            blockedBy: input.adminId,
+            blockedReason:
+              input.reason?.trim() || "Compte bloque par le super admin.",
+          }
+        : {
+            accountStatus: "active",
+            blockedAt: null,
+            blockedBy: null,
+            blockedReason: null,
+          },
+    include: { kyc: true },
+  });
+
   return toPublic(user);
 }
 
@@ -398,7 +482,13 @@ export async function getKycStatus(userId: string): Promise<KycStatus> {
 }
 
 export async function canPublishServices(userId: string): Promise<boolean> {
-  const status = await getKycStatus(userId);
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { accountStatus: true, kyc: true },
+  });
+  if (!user || user.accountStatus === "blocked") return false;
+
+  const status = deriveKycStatus(user.kyc);
   return (
     status === "submitted" || status === "verified" || status === "rejected"
   );
@@ -566,11 +656,11 @@ export async function getPlatformAdminUserIds(): Promise<string[]> {
 }
 
 export function isProfessionalUser(user: PublicUser | null | undefined) {
-  return user?.role === "professional";
+  return user?.role === "professional" && isAccountActive(user);
 }
 
 export function isClientUser(user: PublicUser | null | undefined) {
-  return user?.role === "client";
+  return user?.role === "client" && isAccountActive(user);
 }
 
 export async function registerUser(
@@ -609,6 +699,7 @@ export async function verifyCredentials(
     include: { kyc: true },
   });
   if (!user || !user.passwordHash) return null;
+  if (user.accountStatus === "blocked") return null;
 
   const ok = await compare(password, user.passwordHash);
   if (!ok) return null;
@@ -624,7 +715,7 @@ export async function getCredentialsUserByEmail(
     include: { kyc: true },
   });
 
-  if (!user?.passwordHash) return null;
+  if (!user?.passwordHash || user.accountStatus === "blocked") return null;
 
   return toPublic(user);
 }

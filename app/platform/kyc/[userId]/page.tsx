@@ -16,6 +16,7 @@ import {
   getKycStatus,
   getKycSubmission,
   getUserById,
+  isAccountActive,
   isPlatformAdmin,
 } from "@/src/lib/users-store";
 
@@ -26,10 +27,11 @@ export default async function PlatformKycDetailPage({
 }) {
   const session = await auth();
   const { userId } = await params;
-  if (!session?.user?.email) {
+  if (!session?.user?.id || !session.user.email) {
     redirect(`/login?callbackUrl=/platform/kyc/${encodeURIComponent(userId)}`);
   }
-  if (!isPlatformAdmin(session.user.email)) {
+  const admin = await getUserById(session.user.id);
+  if (!isAccountActive(admin) || !isPlatformAdmin(session.user.email)) {
     redirect("/");
   }
   const [submission, user, status] = await Promise.all([

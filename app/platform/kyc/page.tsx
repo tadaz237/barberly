@@ -4,15 +4,19 @@ import { redirect } from "next/navigation";
 import {
   CheckCircle2,
   Clock4,
+  FileText,
   Inbox,
   ShieldAlert,
   ShieldCheck,
   ShieldX,
+  Users,
   UserRound,
 } from "lucide-react";
 import { SupportLink } from "@/src/components/support/support-link";
 import { auth } from "@/src/lib/auth";
 import {
+  getUserById,
+  isAccountActive,
   isPlatformAdmin,
   listKycSubmissions,
   type KycStatus,
@@ -42,10 +46,11 @@ export default async function PlatformKycListPage({
   searchParams: Promise<{ status?: string }>;
 }) {
   const session = await auth();
-  if (!session?.user?.email) {
+  if (!session?.user?.id || !session.user.email) {
     redirect("/login?callbackUrl=/platform/kyc");
   }
-  if (!isPlatformAdmin(session.user.email)) {
+  const admin = await getUserById(session.user.id);
+  if (!isAccountActive(admin) || !isPlatformAdmin(session.user.email)) {
     redirect("/");
   }
 
@@ -100,6 +105,20 @@ export default async function PlatformKycListPage({
               label="Support"
               className="inline-flex h-8 items-center gap-2 rounded-full border border-sky-400/30 bg-sky-400/10 px-3 text-xs font-semibold text-sky-100 transition-colors hover:bg-sky-400/20"
             />
+            <Link
+              href="/platform/users"
+              className="inline-flex h-8 items-center gap-2 rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 text-xs font-semibold text-cyan-100 transition-colors hover:bg-cyan-300/20"
+            >
+              <Users className="size-3.5" />
+              Utilisateurs
+            </Link>
+            <Link
+              href="/platform/publications"
+              className="inline-flex h-8 items-center gap-2 rounded-full border border-red-300/30 bg-red-300/10 px-3 text-xs font-semibold text-red-100 transition-colors hover:bg-red-300/20"
+            >
+              <FileText className="size-3.5" />
+              Publications
+            </Link>
             <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs">
               <ShieldCheck className="size-3.5 text-amber-300" />
               <span className="text-white/70">Admin plateforme</span>

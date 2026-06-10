@@ -1,6 +1,12 @@
 import type { Service } from "@prisma/client";
 import { prisma } from "@/src/lib/prisma";
-import { PLAN_LIMITS, type Gender, type Plan } from "@/src/lib/users-store";
+import {
+  PLAN_LIMITS,
+  type AccountStatus,
+  type AccountRole,
+  type Gender,
+  type Plan,
+} from "@/src/lib/users-store";
 
 export type ServiceItem = {
   id: string;
@@ -41,15 +47,25 @@ export type UpdateServiceInput = Omit<CreateServiceInput, "ownerId" | "image"> &
   image?: string | null;
 };
 
+export type PlatformServicePublication = ServiceItem & {
+  ownerName: string;
+  ownerEmail: string;
+  ownerImage?: string;
+  ownerRole?: AccountRole;
+  ownerAccountStatus?: AccountStatus;
+};
+
 const SERVICE_OWNER_SELECT = {
   plan: true,
   gender: true,
+  accountStatus: true,
   kyc: { select: { status: true, gender: true } },
 } as const;
 
 type ServiceOwnerMeta = {
   plan: Plan;
   gender: Gender | null;
+  accountStatus: AccountStatus;
   kyc: { status: string; gender: Gender | null } | null;
 } | null;
 
@@ -119,6 +135,7 @@ function toOwnerMeta(owner: ServiceOwnerMeta | undefined) {
 export async function getServices(): Promise<ServiceItem[]> {
   const [services, ratingRows] = await Promise.all([
     prisma.service.findMany({
+      where: { owner: { accountStatus: "active" } },
       orderBy: [{ featured: "desc" }, { createdAt: "desc" }],
       include: {
         owner: { select: SERVICE_OWNER_SELECT },
@@ -160,8 +177,8 @@ export async function getServices(): Promise<ServiceItem[]> {
 export async function getServiceById(
   id: string,
 ): Promise<ServiceItem | undefined> {
-  const service = await prisma.service.findUnique({
-    where: { id },
+  const service = await prisma.service.findFirst({
+    where: { id, owner: { accountStatus: "active" } },
     include: { owner: { select: SERVICE_OWNER_SELECT } },
   });
   return service ? toServiceItem(service, toOwnerMeta(service.owner)) : undefined;
@@ -186,6 +203,64 @@ export async function getServicesByOwner(
     include: { owner: { select: SERVICE_OWNER_SELECT } },
   });
   return services.map((s) => toServiceItem(s, toOwnerMeta(s.owner)));
+}
+
+export async function listPlatformServicePublications(): Promise<
+  PlatformServicePublication[]
+> {
+  const services = await prisma.service.findMany({
+    orderBy: { createdAt: "desc" },
+    include: {
+      owner: {
+        select: {
+          name: true,
+          email: true,
+          image: true,
+          role: true,
+          ...SERVICE_OWNER_SELECT,
+        },
+      },
+    },
+  });
+
+  return services.map((service) => ({
+    ...toServiceItem(service, toOwnerMeta(service.owner)),
+    ownerName: service.owner?.name ?? "Compte supprime",
+    ownerEmail: service.owner?.email ?? "Aucun proprietaire",
+    ownerImage: service.owner?.image ?? undefined,
+    ownerRole: service.owner?.role,
+    ownerAccountStatus: service.owner?.accountStatus,
+  }));
+}
+
+export async function getServiceForModeration(
+  id: string,
+): Promise<PlatformServicePublication | null> {
+  const service = await prisma.service.findUnique({
+    where: { id },
+    include: {
+      owner: {
+        select: {
+          name: true,
+          email: true,
+          image: true,
+          role: true,
+          ...SERVICE_OWNER_SELECT,
+        },
+      },
+    },
+  });
+
+  if (!service) return null;
+
+  return {
+    ...toServiceItem(service, toOwnerMeta(service.owner)),
+    ownerName: service.owner?.name ?? "Compte supprime",
+    ownerEmail: service.owner?.email ?? "Aucun proprietaire",
+    ownerImage: service.owner?.image ?? undefined,
+    ownerRole: service.owner?.role,
+    ownerAccountStatus: service.owner?.accountStatus,
+  };
 }
 
 export async function countServicesByOwner(ownerId: string): Promise<number> {
@@ -265,6 +340,13 @@ export async function deleteService(
 ): Promise<boolean> {
   const deleted = await prisma.service.deleteMany({
     where: { id, ownerId },
+  });
+  return deleted.count > 0;
+}
+
+export async function deleteServiceAsPlatformAdmin(id: string): Promise<boolean> {
+  const deleted = await prisma.service.deleteMany({
+    where: { id },
   });
   return deleted.count > 0;
 }

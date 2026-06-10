@@ -40,6 +40,9 @@ export default async function KycPage() {
     getKycStatus(session.user.id),
     getGender(),
   ]);
+  if (user?.accountStatus === "blocked") {
+    redirect("/account-blocked");
+  }
   if (user?.role === "client") {
     redirect("/client");
   }

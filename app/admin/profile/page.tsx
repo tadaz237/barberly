@@ -25,6 +25,9 @@ export default async function ProfilePage() {
   if (!user) {
     redirect("/login");
   }
+  if (user.accountStatus === "blocked") {
+    redirect("/account-blocked");
+  }
   if (user.role === "client") {
     redirect("/client");
   }

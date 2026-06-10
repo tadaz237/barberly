@@ -4,6 +4,8 @@ import { deleteImagesFromCloudinary } from "@/src/lib/cloudinary";
 import {
   deleteUserAccount,
   getAccountDeletionSnapshot,
+  getUserById,
+  isAccountActive,
 } from "@/src/lib/users-store";
 
 export const runtime = "nodejs";
@@ -12,6 +14,11 @@ export async function DELETE() {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ message: "Non authentifie." }, { status: 401 });
+  }
+
+  const user = await getUserById(session.user.id);
+  if (!isAccountActive(user)) {
+    return NextResponse.json({ message: "Compte bloque." }, { status: 403 });
   }
 
   const snapshot = await getAccountDeletionSnapshot(session.user.id);

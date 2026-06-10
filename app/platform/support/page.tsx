@@ -1,11 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Headphones, ShieldCheck } from "lucide-react";
+import { FileText, Headphones, ShieldCheck, Users } from "lucide-react";
 import { SupportInbox } from "@/src/components/support/support-chat";
 import { auth } from "@/src/lib/auth";
 import { listSupportConversationsForAdmin } from "@/src/lib/support-store";
-import { isPlatformAdmin } from "@/src/lib/users-store";
+import {
+  getUserById,
+  isAccountActive,
+  isPlatformAdmin,
+} from "@/src/lib/users-store";
 
 export const metadata = {
   title: "Support · Admin",
@@ -13,10 +17,11 @@ export const metadata = {
 
 export default async function PlatformSupportPage() {
   const session = await auth();
-  if (!session?.user?.email) {
+  if (!session?.user?.id || !session.user.email) {
     redirect("/login?callbackUrl=/platform/support");
   }
-  if (!isPlatformAdmin(session.user.email)) {
+  const admin = await getUserById(session.user.id);
+  if (!isAccountActive(admin) || !isPlatformAdmin(session.user.email)) {
     redirect("/");
   }
 
@@ -70,6 +75,20 @@ export default async function PlatformSupportPage() {
           >
             <ShieldCheck className="size-4" />
             Validation KYC
+          </Link>
+          <Link
+            href="/platform/users"
+            className="inline-flex h-9 items-center gap-2 rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 text-xs font-semibold text-cyan-100 transition-colors hover:bg-cyan-300/20"
+          >
+            <Users className="size-4" />
+            Utilisateurs
+          </Link>
+          <Link
+            href="/platform/publications"
+            className="inline-flex h-9 items-center gap-2 rounded-full border border-red-300/30 bg-red-300/10 px-3 text-xs font-semibold text-red-100 transition-colors hover:bg-red-300/20"
+          >
+            <FileText className="size-4" />
+            Publications
           </Link>
         </div>
 

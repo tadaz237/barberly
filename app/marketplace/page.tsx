@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ChevronRight, UserRound } from "lucide-react";
 import { ServicesShowcase } from "@/src/components/marketplace/services-showcase";
 import { SupportLink } from "@/src/components/support/support-link";
@@ -13,6 +14,9 @@ export default async function MarketplacePage() {
     session?.user?.id ? getUserById(session.user.id) : Promise.resolve(null),
     getTopRatedProviders(50),
   ]);
+  if (user?.accountStatus === "blocked") {
+    redirect("/account-blocked");
+  }
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white">

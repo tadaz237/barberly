@@ -32,6 +32,9 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: "Non authentifié." }, { status: 401 });
     }
     const user = await getUserById(session.user.id);
+    if (!user || user.accountStatus === "blocked") {
+      return NextResponse.json({ message: "Compte bloque." }, { status: 403 });
+    }
     return NextResponse.json({
       reservations: isClientUser(user)
         ? await getReservationsForClient(session.user.id)
@@ -60,6 +63,9 @@ export async function POST(request: Request) {
       { message: "Compte introuvable." },
       { status: 401 },
     );
+  }
+  if (!isClientUser(user)) {
+    return NextResponse.json({ message: "Acces refuse." }, { status: 403 });
   }
 
   let body: IncomingPayload;

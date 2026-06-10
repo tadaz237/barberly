@@ -26,6 +26,12 @@ export default async function AdminCataloguesPage() {
     redirect("/login");
   }
   const user = await getUserById(session.user.id);
+  if (!user) {
+    redirect("/login");
+  }
+  if (user.accountStatus === "blocked") {
+    redirect("/account-blocked");
+  }
   if (user?.role === "client") {
     redirect("/client");
   }
@@ -39,7 +45,7 @@ export default async function AdminCataloguesPage() {
   ]);
 
   const productAudience = normalizeProductAudience(
-    user?.gender ?? submission?.gender,
+    user.gender ?? submission?.gender,
   );
   const productCategoryOptions = getProductCategoryOptions(productAudience);
   const remaining = Number.isFinite(limits.cataloguesMax)

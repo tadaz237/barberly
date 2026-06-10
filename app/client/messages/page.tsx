@@ -16,6 +16,7 @@ export default async function ClientMessagesPage() {
 
   const user = await getUserById(session.user.id);
   if (!user) redirect("/client-login?callbackUrl=/client/messages");
+  if (user.accountStatus === "blocked") redirect("/account-blocked");
   if (user.role !== "client") redirect("/admin/messages");
 
   const conversations = await listConversationsForUser(user.id);

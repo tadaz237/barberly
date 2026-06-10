@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { auth } from "@/src/lib/auth";
 import { sendBrowserPushToUser } from "@/src/lib/push-notifications";
 import { sendAdminSupportReply } from "@/src/lib/support-store";
-import { isPlatformAdmin } from "@/src/lib/users-store";
+import {
+  getUserById,
+  isAccountActive,
+  isPlatformAdmin,
+} from "@/src/lib/users-store";
 
 type IncomingPayload = {
   body?: unknown;
@@ -18,7 +22,8 @@ export async function POST(
   if (!session?.user?.id) {
     return NextResponse.json({ message: "Non authentifié." }, { status: 401 });
   }
-  if (!isPlatformAdmin(session.user.email)) {
+  const admin = await getUserById(session.user.id);
+  if (!isAccountActive(admin) || !isPlatformAdmin(session.user.email)) {
     return NextResponse.json({ message: "Accès refusé." }, { status: 403 });
   }
 

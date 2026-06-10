@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/src/lib/auth";
 import {
   approveKyc,
+  getUserById,
+  isAccountActive,
   isPlatformAdmin,
   rejectKyc,
 } from "@/src/lib/users-store";
@@ -12,6 +14,10 @@ async function requirePlatformAdmin() {
   const session = await auth();
   if (!session?.user?.id || !isPlatformAdmin(session.user.email)) {
     throw new Error("Accès refusé.");
+  }
+  const admin = await getUserById(session.user.id);
+  if (!isAccountActive(admin)) {
+    throw new Error("Acces refuse.");
   }
   return session.user.id;
 }

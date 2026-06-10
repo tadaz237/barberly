@@ -5,6 +5,7 @@ import {
   isBrowserPushConfigured,
   saveBrowserPushSubscription,
 } from "@/src/lib/push-notifications";
+import { getUserById, isAccountActive } from "@/src/lib/users-store";
 
 type SubscriptionPayload = {
   subscription?: unknown;
@@ -19,6 +20,11 @@ export async function GET() {
     return NextResponse.json({ message: "Non authentifie." }, { status: 401 });
   }
 
+  const user = await getUserById(session.user.id);
+  if (!isAccountActive(user)) {
+    return NextResponse.json({ message: "Compte bloque." }, { status: 403 });
+  }
+
   return NextResponse.json(
     { configured: isBrowserPushConfigured() },
     { headers: { "Cache-Control": "no-store" } },
@@ -29,6 +35,11 @@ export async function POST(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ message: "Non authentifie." }, { status: 401 });
+  }
+
+  const user = await getUserById(session.user.id);
+  if (!isAccountActive(user)) {
+    return NextResponse.json({ message: "Compte bloque." }, { status: 403 });
   }
 
   if (!isBrowserPushConfigured()) {
@@ -70,6 +81,11 @@ export async function DELETE(request: Request) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ message: "Non authentifie." }, { status: 401 });
+  }
+
+  const user = await getUserById(session.user.id);
+  if (!isAccountActive(user)) {
+    return NextResponse.json({ message: "Compte bloque." }, { status: 403 });
   }
 
   let body: SubscriptionPayload;

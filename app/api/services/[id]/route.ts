@@ -13,7 +13,11 @@ import {
   MAX_SERVICE_DURATION_MINUTES,
   validateServiceTextFields,
 } from "@/src/lib/service-validation";
-import { getUserPlan } from "@/src/lib/users-store";
+import {
+  getUserById,
+  getUserPlan,
+  isProfessionalUser,
+} from "@/src/lib/users-store";
 
 type IncomingPayload = {
   name?: unknown;
@@ -113,6 +117,11 @@ export async function PATCH(
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ message: "Non authentifié." }, { status: 401 });
+  }
+
+  const user = await getUserById(session.user.id);
+  if (!isProfessionalUser(user)) {
+    return NextResponse.json({ message: "Acces refuse." }, { status: 403 });
   }
 
   const { id } = await params;
@@ -247,6 +256,11 @@ export async function DELETE(
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ message: "Non authentifié." }, { status: 401 });
+  }
+
+  const user = await getUserById(session.user.id);
+  if (!isProfessionalUser(user)) {
+    return NextResponse.json({ message: "Acces refuse." }, { status: 403 });
   }
 
   const { id } = await params;

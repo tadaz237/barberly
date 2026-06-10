@@ -5,7 +5,7 @@ import {
   sendConversationMessage,
 } from "@/src/lib/conversations-store";
 import { sendBrowserPushToUser } from "@/src/lib/push-notifications";
-import { getUserById } from "@/src/lib/users-store";
+import { getUserById, isAccountActive } from "@/src/lib/users-store";
 
 type IncomingPayload = {
   body?: unknown;
@@ -20,6 +20,11 @@ export async function GET(
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ message: "Non authentifié." }, { status: 401 });
+  }
+
+  const user = await getUserById(session.user.id);
+  if (!isAccountActive(user)) {
+    return NextResponse.json({ message: "Compte bloque." }, { status: 403 });
   }
 
   const { id } = await params;
@@ -44,6 +49,11 @@ export async function POST(
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ message: "Non authentifié." }, { status: 401 });
+  }
+
+  const sender = await getUserById(session.user.id);
+  if (!isAccountActive(sender)) {
+    return NextResponse.json({ message: "Compte bloque." }, { status: 403 });
   }
 
   let body: IncomingPayload;

@@ -66,6 +66,10 @@ export async function GET(request: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ message: "Non authentifié." }, { status: 401 });
     }
+    const user = await getUserById(session.user.id);
+    if (!isProfessionalUser(user)) {
+      return NextResponse.json({ message: "Acces refuse." }, { status: 403 });
+    }
     return NextResponse.json({
       services: await getServicesByOwner(session.user.id),
     });

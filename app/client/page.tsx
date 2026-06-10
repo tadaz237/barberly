@@ -38,6 +38,7 @@ export default async function ClientPage() {
 
   const user = await getUserById(session.user.id);
   if (!user) redirect("/client-login?callbackUrl=/client");
+  if (user.accountStatus === "blocked") redirect("/account-blocked");
   if (user.role !== "client") redirect("/admin");
 
   const reservations = await getReservationsForClient(user.id);

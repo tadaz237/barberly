@@ -3,7 +3,11 @@ import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { getGender } from "@/src/lib/gender";
 import { getUserRole } from "@/src/lib/user-role";
-import { upsertOAuthUser, verifyCredentials } from "@/src/lib/users-store";
+import {
+  getUserByEmail,
+  upsertOAuthUser,
+  verifyCredentials,
+} from "@/src/lib/users-store";
 import { consumeVerificationCode } from "@/src/lib/verification-codes";
 
 const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
@@ -64,6 +68,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
+    async signIn({ user }) {
+      if (!user.email) return true;
+      const stored = await getUserByEmail(user.email);
+      return stored?.accountStatus !== "blocked";
+    },
     async jwt({ token, user, account }) {
       if (user && account?.provider === "google" && user.email) {
         const [cookieGender, cookieRole] = await Promise.all([

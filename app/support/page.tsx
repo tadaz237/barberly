@@ -20,7 +20,12 @@ export default async function SupportPage() {
   if (!user) redirect("/login?callbackUrl=/support");
 
   const conversation = await getSupportConversationForUser(user.id);
-  const homeHref = user.role === "client" ? "/client" : "/admin";
+  const homeHref =
+    user.accountStatus === "blocked"
+      ? "/account-blocked"
+      : user.role === "client"
+        ? "/client"
+        : "/admin";
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-black text-white">
