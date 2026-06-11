@@ -9,7 +9,6 @@ import {
   Images,
   ShieldAlert,
   ShieldCheck,
-  ShieldEllipsis,
   ShieldX,
   Sparkles,
   Store,
@@ -178,28 +177,13 @@ export default async function AdminPage() {
               <span className="hidden sm:inline">Messages</span>
             </MessagesLinkWithNotifications>
             {platformAdmin ? (
-              <>
-                <Link
-                  href="/platform/kyc"
-                  className="inline-flex h-9 items-center gap-2 rounded-full border border-amber-300/30 bg-amber-300/10 px-3 text-xs font-semibold text-amber-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-amber-300/20"
-                >
-                  <ShieldEllipsis className="size-4" />
-                  <span className="hidden sm:inline">Validation KYC</span>
-                </Link>
-                <Link
-                  href="/platform/users"
-                  className="inline-flex h-9 items-center gap-2 rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 text-xs font-semibold text-cyan-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-cyan-300/20"
-                >
-                  <Users className="size-4" />
-                  <span className="hidden sm:inline">Utilisateurs</span>
-                </Link>
-                <SupportLink
-                  href="/platform/support"
-                  icon="headphones"
-                  label="Support"
-                  className="inline-flex h-9 items-center gap-2 rounded-full border border-sky-400/30 bg-sky-400/10 px-3 text-xs font-semibold text-sky-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-sky-400/20"
-                />
-              </>
+              <Link
+                href="/platform/users"
+                className="inline-flex h-9 items-center gap-2 rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 text-xs font-semibold text-cyan-100 transition-all duration-200 hover:-translate-y-0.5 hover:bg-cyan-300/20"
+              >
+                <Users className="size-4" />
+                <span className="hidden sm:inline">Utilisateurs</span>
+              </Link>
             ) : (
               <SupportLink
                 href="/support"
